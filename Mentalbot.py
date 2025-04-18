@@ -233,7 +233,8 @@ def home():
 
 @app.route('/analyze', methods=['POST'])
 def analyze_text():
-    text = request.form.get("text", "") 
+    data = request.get_json() 
+    text = data.get("text", "")
     
     if not text:
         return jsonify({"error": "No text provided"}), 400
