@@ -97,6 +97,8 @@ class MentalHealthChatbot:
             confidence_score = results[0]['score']*100
             sentiment = self.sentiment_mapping.get(label, "Unknown")
             return sentiment, confidence_score
+
+        return "Unknown", 0
         
 
 
