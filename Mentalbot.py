@@ -227,6 +227,9 @@ class MentalHealthChatbot:
                 return exercise_recommendations[condition][risk_level]
         return ["No specific recommendations available."]
     
+@app.route('/')
+def home():
+    return "Welcome to the MentalBot AI!"
 
 @app.route('/analyze', methods=['POST'])
 def analyze_text():
@@ -272,4 +275,4 @@ def analyze_text():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    app.run(debug=True)
