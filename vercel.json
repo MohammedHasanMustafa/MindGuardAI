@@ -1,0 +1,15 @@
+{
+    "builds": [
+      {
+        "src": "Mentalbot.py",
+        "use": "@vercel/python"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/api/(.*)",
+        "dest": "/Mentalbot.py"
+      }
+    ]
+  }
+  
