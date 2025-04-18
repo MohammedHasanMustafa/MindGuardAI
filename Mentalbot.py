@@ -93,9 +93,9 @@ class MentalHealthChatbot:
         results = self.sentiment_client.predict(text=text, api_name="/predict")
     
         if results and isinstance(results, list):
-            label = results[0]['label']
+            best_result = results[0]
             sentiment_confidence = results[0]['score'] * 100
-            sentiment = self.sentiment_mapping.get(label, "Unknown")
+            sentiment = self.sentiment_mapping.get(best_result["label"], "Unknown")
 
             return sentiment, sentiment_confidence
 
