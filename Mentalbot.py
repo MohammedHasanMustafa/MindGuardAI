@@ -94,11 +94,12 @@ class MentalHealthChatbot:
     
         if results and isinstance(results, list):
             label = results[0]['label']
-            confidence_score = results[0]['score']*100
+            sentiment_confidence = results[0]['score'] * 100
             sentiment = self.sentiment_mapping.get(label, "Unknown")
-            return sentiment, confidence_score
 
-        return "Unknown", 0
+            return sentiment, sentiment_confidence
+
+        return "Unknown", 0.0
         
 
 
