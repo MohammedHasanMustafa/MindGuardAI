@@ -7,7 +7,6 @@ from lime.lime_text import LimeTextExplainer
 from datetime import datetime
 import sqlite3
 import logging
-import os
 
 app = Flask(__name__)
 
@@ -277,5 +276,5 @@ def analyze_text():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # fallback default
-    app.run(host="0.0.0.0", port=port)
+    app.run()
+
