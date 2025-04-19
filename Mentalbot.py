@@ -234,8 +234,7 @@ def home():
 
 @app.route('/analyze', methods=['POST'])
 def analyze_text():
-    data = request.get_json() 
-    text = data.get("text", "")
+    text = request.form.get("text", "") 
     
     if not text:
         return jsonify({"error": "No text provided"}), 400
@@ -274,6 +273,7 @@ def analyze_text():
     response["lime_explanation"] = lime_explanation
 
     return jsonify(response)
+
 
 
 if __name__ == "__main__":
