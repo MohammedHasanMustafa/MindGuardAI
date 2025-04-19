@@ -1,9 +1,0 @@
-name: flask-chatbot
-build:
-  type: docker
-  dockerfile: Dockerfile
-run:
-  cmd: gunicorn Mentalbot:app
-  env:
-    - key: PORT
-      value: "8080"
