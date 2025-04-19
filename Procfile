@@ -1,1 +1,1 @@
-web: gunicorn Mentalbot:app
+gunicorn Mentalbot:app
