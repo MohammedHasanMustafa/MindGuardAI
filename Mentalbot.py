@@ -7,6 +7,7 @@ from lime.lime_text import LimeTextExplainer
 from datetime import datetime
 import sqlite3
 import logging
+import os
 
 app = Flask(__name__)
 
@@ -275,6 +276,6 @@ def analyze_text():
     return jsonify(response)
 
 
-
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    port = int(os.environ.get("PORT", 8080))  # Important for Koyeb
+    app.run(host="0.0.0.0", port=port)
