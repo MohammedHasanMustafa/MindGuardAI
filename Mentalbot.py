@@ -277,5 +277,5 @@ def analyze_text():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # Important for Koyeb
+    port = int(os.environ.get("PORT", 10000))  # fallback default
     app.run(host="0.0.0.0", port=port)
