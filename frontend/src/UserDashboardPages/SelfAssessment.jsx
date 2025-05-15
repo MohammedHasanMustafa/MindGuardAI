@@ -57,7 +57,7 @@ const SelfAssessmentPage = () => {
   const fetchAssessments = async () => {
     if (!token) return;
     try {
-      const response = await axios.get("http://localhost:4000/api/assessment", {
+      const response = await axios.get("https://mindguardaibackend.onrender.com/api/assessment", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -113,7 +113,7 @@ const SelfAssessmentPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/assessment",
+        "https://mindguardaibackend.onrender.com/api/assessment",
         assessmentData,
         {
           headers: {
