@@ -1,0 +1,286 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+/* Title gradient animations */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Title styles */
+.title-gradient-1 {
+  background: linear-gradient(90deg, #2563eb, #4f46e5, #7c3aed);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 4s ease infinite;
+}
+
+.title-gradient-2 {
+  background: linear-gradient(90deg, #9333ea, #d946ef, #ec4899);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 4s ease infinite;
+  animation-delay: 1s;
+}
+
+.underline-gradient {
+  background: linear-gradient(90deg, #3b82f6, #6366f1, #8b5cf6, #d946ef);
+  background-size: 300% auto;
+  animation: gradient-shift 6s linear infinite;
+}
+
+/* Base styling */
+.light-modern-coping {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #1f2937;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Typography utilities */
+.font-poppins {
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+.font-inter {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* 3D Perspective classes */
+.perspective-800 {
+  perspective: 800px;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-1200 {
+  perspective: 1200px;
+}
+
+/* Floating animations for background orbs */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-20px) translateX(15px);
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-30px) translateX(-20px);
+  }
+}
+
+@keyframes float-fast {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-15px) translateX(10px);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 12s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 8s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: float-fast 6s ease-in-out infinite;
+}
+
+/* Radial pulsing animation */
+.light-radial-pulse {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+  animation: light-pulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes light-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.15;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0.05;
+  }
+}
+
+/* Light stars animation */
+.light-stars-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.light-stars-small, .light-stars-medium, .light-stars-large {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-repeat: repeat;
+  background-image: radial-gradient(#6366f1, rgba(99, 102, 241, 0) 2px);
+  background-size: 150px 150px;
+  opacity: 0.15;
+}
+
+.light-stars-small {
+  background-size: 100px 100px;
+  animation: animateStars 100s linear infinite;
+}
+
+.light-stars-medium {
+  background-size: 200px 200px;
+  background-image: radial-gradient(#6366f1, rgba(99, 102, 241, 0) 3px);
+  animation: animateStars 150s linear infinite;
+  opacity: 0.1;
+}
+
+.light-stars-large {
+  background-size: 300px 300px;
+  background-image: radial-gradient(#6366f1, rgba(99, 102, 241, 0) 4px);
+  animation: animateStars 200s linear infinite;
+  opacity: 0.05;
+}
+
+@keyframes animateStars {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-1000px);
+  }
+}
+
+/* Hide scrollbar in tab navigation but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Letter animation styles */
+.letter-animation {
+  cursor: pointer;
+  margin: 0 1px;
+  position: relative;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.letter-inner {
+  transition: transform 0.2s ease;
+}
+
+.letter-effect {
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #4f46e5, #d946ef);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+  border-radius: 2px;
+  opacity: 0;
+}
+
+.letter-animation:hover .letter-effect {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.letter-animation:nth-child(odd):hover .letter-inner {
+  animation: letterPulseUp 0.4s ease-in-out;
+}
+
+.letter-animation:nth-child(even):hover .letter-inner {
+  animation: letterPulseDown 0.4s ease-in-out;
+}
+
+@keyframes letterPulseUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes letterPulseDown {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+/* Enhanced glow effect */
+.letter-animation:hover {
+  z-index: 10;
+}
+
+.letter-animation:hover::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle, 
+    rgba(79, 70, 229, 0.3) 0%, 
+    rgba(217, 70, 239, 0.3) 50%, 
+    transparent 80%
+  );
+  transform: translate(-50%, -50%);
+  filter: blur(10px);
+  z-index: -1;
+  opacity: 0;
+  animation: glowFadeIn 0.3s forwards;
+}
+
+@keyframes glowFadeIn {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Media queries for responsive design */
+@media (max-width: 640px) {
+  .light-modern-coping h1 {
+    font-size: 2.5rem;
+  }
+  
+  .light-modern-coping p {
+    font-size: 1rem;
+  }
+  
+  .light-modern-coping .grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .scrollbar-hide {
+    padding: 0.25rem;
+  }
+}
+
+
