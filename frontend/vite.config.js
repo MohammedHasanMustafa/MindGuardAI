@@ -10,10 +10,10 @@ export default defineConfig({
     
   ],
   server: {
-    port: 5173, 
+    port: process.env.PORT, 
     proxy: {
       "/api": {
-        target: "http://localhost:4000",
+        target: "https://mindguardaibackend.onrender.com",
         changeOrigin: true,
         secure: false,
       },
