@@ -3,7 +3,7 @@ import React from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import AppContent from "./AppContent";
 import { AuthProvider } from "./AuthContext";
-import { ThemeProvider } from "./contexts/ThemeContext"; // Make sure the path is correct
+import { ThemeProvider } from "../src/UserDashboardPages/Themes/ThemeContext";
 
 const App = () => {
   return (
