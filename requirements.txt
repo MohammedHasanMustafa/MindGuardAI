@@ -1,8 +1,0 @@
-Flask
-transformers
-gradio
-lime
-matplotlib
-gunicorn
-torch
-Flax
