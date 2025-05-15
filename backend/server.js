@@ -16,7 +16,11 @@ const PORT = process.env.PORT || 4000;
 const app = express();
 
 app.use(express.json());
-app.use(cors({ origin: "https://mind-guard-ai-6y6p.vercel.app/" }));
+app.use(cors({
+  origin: "https://mind-guard-ai-6y6p.vercel.app",
+  credentials: true 
+}));
+
 
 const startServer = async () => {
   await connectDB();
