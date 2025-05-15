@@ -17,7 +17,7 @@ const ForgotPassword = () => {
     setMessage("");
 
    try {
-  const res = await axios.post("http://localhost:4000/api/auth/forgot-password", { email });
+  const res = await axios.post("https://mindguardaibackend.onrender.com/api/auth/forgot-password", { email });
 
   setMessage(res.data.message || "Password reset link has been sent to your email.");
 } catch (err) {
