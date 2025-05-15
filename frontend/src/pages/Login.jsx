@@ -11,7 +11,7 @@ const Login = ({ setToken }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:4000/api/auth/login", { email, password });
+      const res = await axios.post("https://mindguardaibackend.onrender.com/api/auth/login", { email, password });
       localStorage.setItem("token", res.data.token);
       if (setToken) {
         setToken(res.data.token);
