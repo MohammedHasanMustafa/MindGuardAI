@@ -21,7 +21,7 @@ const Settings = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get("http://localhost:4000/api/auth/dashboard", {
+        const res = await axios.get("https://mindguardaibackend.onrender.com/api/auth/dashboard", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const user = res.data.user;
