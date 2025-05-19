@@ -97,7 +97,7 @@ const TrendGraphs = () => {
         setIsLoading(true);
         
         // Fetch real Mindguard data
-        const response = await axios.get(`https://mindguardaibackend.onrender.com//api/chatbot/trends`, {
+        const response = await axios.get(`https://mindguardaibackend.onrender.com/api/chatbot/trends`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         
