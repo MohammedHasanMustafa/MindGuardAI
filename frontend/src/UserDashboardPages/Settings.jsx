@@ -56,7 +56,7 @@ const Settings = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get("http://localhost:4000/api/auth/dashboard", {
+        const res = await axios.get("https://mindguardaibackend.onrender.com/api/auth/dashboard", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const user = res.data.user;
@@ -178,7 +178,7 @@ const Settings = () => {
     if (formData.profileImage) data.append("profileImage", formData.profileImage);
 
     try {
-      await axios.put(`http://localhost:4000/api/auth/profile/${userId}`, data, {
+      await axios.put(`https://mindguardaibackend.onrender.com//api/auth/profile/${userId}`, data, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
       });
       setSuccessMessage("✅ Profile updated successfully!");
