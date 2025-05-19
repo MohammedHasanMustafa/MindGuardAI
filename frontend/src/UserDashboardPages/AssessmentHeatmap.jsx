@@ -16,7 +16,7 @@ const AssessmentHeatmap = () => {
     const fetchAssessmentData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:4000/api/assessment/time-period?timePeriod=${timePeriod}`,
+          `https://mindguardaibackend.onrender.com//api/assessment/time-period?timePeriod=${timePeriod}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
