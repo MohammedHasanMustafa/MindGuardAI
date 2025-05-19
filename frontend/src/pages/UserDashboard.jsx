@@ -13,6 +13,8 @@ import Community from "../UserDashboardPages/Community";
 import Chatbot from "../UserDashboardPages/Chatbot"; 
 import { PiChatCircleDotsFill } from "react-icons/pi";
 import ReportsPage from "../UserDashboardPages/ReportsPage";
+import GuidedMeditation from "../UserDashboardPages/GuidedMeditation";
+import MeditationDetail from "../UserDashboardPages/MeditationDetail";
 
 
 const UserDashboard = () => {
@@ -49,6 +51,10 @@ const UserDashboard = () => {
                
               }
             />
+
+            {/* Meditation Routes */}
+            <Route path="guided-meditation" element={<GuidedMeditation />} />
+            <Route path="guided-meditation/:id" element={<MeditationDetail />} />
 
             {/* Default Route */}
             <Route path="*" element={<h1 className="text-center text-xl">404 - Page Not Found</h1>} />
