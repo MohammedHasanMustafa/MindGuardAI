@@ -33,7 +33,7 @@ const RiskAnalysis = () => {
 
     const fetchAlerts = async () => {
       try {
-        const res = await axios.get("https://localhost:4000/api/chatbot/risk-alerts", {
+        const res = await axios.get("https://mindguardaibackend.onrender.com//api/chatbot/risk-alerts", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setAlerts(res.data.alerts.map(alert => ({
