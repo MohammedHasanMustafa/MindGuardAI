@@ -19,738 +19,982 @@ import {
   Bookmark,
   RefreshCw,
   Trophy,
+  Play,
 } from "lucide-react";
+
 
 function ChatbotSuggestionPage() {
   // Exercise recommendations data
   const exerciseRecommendations = {
-    Depression: {
-      "High Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Try 10 minutes of deep breathing 🧘",
-          content1: "Find a quiet space and focus on slow, rhythmic breaths",
-          content2: "Helps reduce stress and promotes mental clarity",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Go for a 15-minute walk in nature 🏃",
-          content1: "Choose a peaceful path and observe your surroundings",
-          content2: "Boosts mood and increases vitamin D exposure",
-          image:
-            "https://images.pexels.com/photos/1448055/pexels-photo-1448055.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Practice guided meditation 🔄",
-          content1: "Use a meditation app or online resource for guidance",
-          content2: "Enhances mindfulness and emotional balance",
-          image:
-            "https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg",
-        },
-      ],
-      "Moderate Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Write down 3 things you're grateful for 🧘",
-          content1: "Keep a gratitude journal by your bedside",
-          content2: "Shifts focus to positive aspects of life",
-          image:
-            "https://images.pexels.com/photos/3059748/pexels-photo-3059748.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Do light stretching or yoga for 10 minutes 🏃",
-          content1: "Start with simple stretches and listen to your body",
-          content2: "Improves flexibility and reduces physical tension",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Listen to calming music 🔄",
-          content1: "Create a playlist of soothing instrumental tracks",
-          content2: "Reduces anxiety and promotes relaxation",
-          image:
-            "https://images.pexels.com/photos/4126743/pexels-photo-4126743.jpeg",
-        },
-      ],
-      "Low Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Engage in a hobby you enjoy 🧘",
-          content1: "Set aside dedicated time for your favorite activity",
-          content2: "Provides a sense of accomplishment and joy",
-          image:
-            "https://images.pexels.com/photos/3768894/pexels-photo-3768894.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Call a friend and have a short chat 🏃",
-          content1: "Schedule regular check-ins with loved ones",
-          content2: "Strengthens social connections and support",
-          image:
-            "https://images.pexels.com/photos/5793913/pexels-photo-5793913.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Do a short 5-minute mindfulness exercise 🔄",
-          content1: "Focus on your breath and present moment",
-          content2: "Reduces stress and improves concentration",
-          image:
-            "https://images.pexels.com/photos/3822711/pexels-photo-3822711.jpeg",
-        },
-      ],
-    },
-    Anxiety: {
-      "High Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Try progressive muscle relaxation 🧘",
-          content1: "Tense and relax each muscle group systematically",
-          content2: "Releases physical tension and calms the mind",
-          image:
-            "https://images.pexels.com/photos/3759658/pexels-photo-3759658.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Use the 4-7-8 breathing technique 🏃",
-          content1: "Inhale for 4, hold for 7, exhale for 8 counts",
-          content2: "Activates the parasympathetic nervous system",
-          image:
-            "https://images.pexels.com/photos/3822906/pexels-photo-3822906.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Write down your thoughts to clear your mind 🔄",
-          content1: "Use a journal to express worries and concerns",
-          content2: "Helps identify thought patterns and triggers",
-          image:
-            "https://images.pexels.com/photos/3059747/pexels-photo-3059747.jpeg",
-        },
-      ],
-      "Moderate Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Listen to nature sounds or white noise 🧘",
-          content1: "Create a peaceful audio environment",
-          content2: "Masks distracting thoughts and sounds",
-          image:
-            "https://images.pexels.com/photos/1448055/pexels-photo-1448055.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Take a 15-minute break from screens 🏃",
-          content1: "Focus on a non-digital activity",
-          content2: "Reduces eye strain and mental fatigue",
-          image:
-            "https://images.pexels.com/photos/4049990/pexels-photo-4049990.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Try a short visualization exercise 🔄",
-          content1: "Imagine a peaceful, safe place in detail",
-          content2: "Creates mental escape from anxiety",
-          image:
-            "https://images.pexels.com/photos/3822620/pexels-photo-3822620.jpeg",
-        },
-      ],
-      "Low Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Practice slow, deep breathing for 5 minutes 🧘",
-          content1: "Count to 4 on inhale and exhale",
-          content2: "Stabilizes heart rate and blood pressure",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Drink herbal tea and relax 🏃",
-          content1: "Choose calming herbs like chamomile or lavender",
-          content2: "Promotes relaxation and mindful moments",
-          image:
-            "https://images.pexels.com/photos/5501104/pexels-photo-5501104.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Read a book for 10 minutes 🔄",
-          content1: "Choose light, enjoyable reading material",
-          content2: "Provides healthy escape and mental stimulation",
-          image:
-            "https://images.pexels.com/photos/5834/nature-grass-leaf-green.jpg",
-        },
-      ],
-    },
-    Bipolar: {
-      "High Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Try a calming breathing exercise 🧘",
-          content1: "Practice box breathing: 4 counts each side",
-          content2: "Helps regulate emotional responses",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Do some light walking or stretching 🏃",
-          content1: "Start with 5-10 minutes of gentle movement",
-          content2: "Stabilizes energy levels and mood",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Establish a calming bedtime routine 🔄",
-          content1: "Set consistent sleep and wake times",
-          content2: "Maintains circadian rhythm balance",
-          image:
-            "https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg",
-        },
-      ],
-      "Moderate Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Listen to relaxing music or sounds 🧘",
-          content1: "Choose slow-tempo, instrumental music",
-          content2: "Helps regulate mood and emotions",
-          image:
-            "https://images.pexels.com/photos/4126743/pexels-photo-4126743.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Take a 10-minute break and walk outside 🏃",
-          content1: "Focus on steady, rhythmic steps",
-          content2: "Provides natural light exposure and exercise",
-          image:
-            "https://images.pexels.com/photos/1448055/pexels-photo-1448055.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Use a mood tracking app 🔄",
-          content1: "Record mood changes and triggers daily",
-          content2: "Helps identify patterns and warning signs",
-          image:
-            "https://images.pexels.com/photos/3059747/pexels-photo-3059747.jpeg",
-        },
-      ],
-      "Low Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Engage in a hobby to distract your mind 🧘",
-          content1: "Choose activities that require focus",
-          content2: "Provides healthy outlet for energy",
-          image:
-            "https://images.pexels.com/photos/3768894/pexels-photo-3768894.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Do 10 minutes of gentle yoga 🏃",
-          content1: "Follow beginner-friendly poses",
-          content2: "Improves body awareness and balance",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Set a daily routine for self-care 🔄",
-          content1: "Create a schedule for basic activities",
-          content2: "Provides structure and stability",
-          image:
-            "https://images.pexels.com/photos/3822711/pexels-photo-3822711.jpeg",
-        },
-      ],
-    },
-    OCD: {
-      "High Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Try deep breathing or mindfulness 🧘",
-          content1: "Focus on breath sensations without judgment",
-          content2: "Reduces anxiety and compulsive urges",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Do a 5-minute grounding exercise 🏃",
-          content1: "Name 5 things you can see, hear, and feel",
-          content2: "Brings attention to present moment",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Use a journal to organize your thoughts 🔄",
-          content1: "Write down intrusive thoughts without acting",
-          content2: "Helps separate thoughts from actions",
-          image:
-            "https://images.pexels.com/photos/3059747/pexels-photo-3059747.jpeg",
-        },
-      ],
-      "Moderate Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Engage in a guided relaxation session 🧘",
-          content1: "Follow along with audio guidance",
-          content2: "Provides structured relaxation practice",
-          image:
-            "https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Take a 10-minute walk outdoors 🏃",
-          content1: "Focus on the natural environment",
-          content2: "Changes scenery and perspective",
-          image:
-            "https://images.pexels.com/photos/1448055/pexels-photo-1448055.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Practice positive affirmations 🔄",
-          content1: "Repeat calming statements regularly",
-          content2: "Builds confidence and resilience",
-          image:
-            "https://images.pexels.com/photos/3822711/pexels-photo-3822711.jpeg",
-        },
-      ],
-      "Low Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Use calming essential oils 🧘",
-          content1: "Try lavender or chamomile scents",
-          content2: "Creates soothing sensory experience",
-          image:
-            "https://images.pexels.com/photos/3059748/pexels-photo-3059748.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Do a 5-minute stretching routine 🏃",
-          content1: "Focus on gentle, flowing movements",
-          content2: "Releases physical tension patterns",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Set up a time to relax every day 🔄",
-          content1: "Schedule regular relaxation breaks",
-          content2: "Creates predictable calm periods",
-          image:
-            "https://images.pexels.com/photos/3822620/pexels-photo-3822620.jpeg",
-        },
-      ],
-    },
-    PTSD: {
-      "High Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Try progressive muscle relaxation 🧘",
-          content1: "Start from toes and work up to head",
-          content2: "Reduces physical stress responses",
-          image:
-            "https://images.pexels.com/photos/3759658/pexels-photo-3759658.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Go for a nature walk 🏃",
-          content1: "Choose familiar, safe environments",
-          content2: "Connects with present surroundings",
-          image:
-            "https://images.pexels.com/photos/1448055/pexels-photo-1448055.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Start journaling your thoughts 🔄",
-          content1: "Write freely without self-judgment",
-          content2: "Processes experiences safely",
-          image:
-            "https://images.pexels.com/photos/3059747/pexels-photo-3059747.jpeg",
-        },
-      ],
-      "Moderate Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Engage in deep breathing exercises 🧘",
-          content1: "Practice 4-7-8 breathing technique",
-          content2: "Calms nervous system activation",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Do light stretching 🏃",
-          content1: "Move gently within comfort zone",
-          content2: "Increases body awareness safely",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Limit social media exposure 🔄",
-          content1: "Set specific times for media use",
-          content2: "Reduces potential triggers",
-          image:
-            "https://images.pexels.com/photos/4049990/pexels-photo-4049990.jpeg",
-        },
-      ],
-      "Low Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Practice mindfulness 🧘",
-          content1: "Start with short, guided sessions",
-          content2: "Builds present-moment awareness",
-          image:
-            "https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Talk to a trusted friend 🏃",
-          content1: "Share comfortable level of detail",
-          content2: "Strengthens support network",
-          image:
-            "https://images.pexels.com/photos/5793913/pexels-photo-5793913.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Spend time with loved ones 🔄",
-          content1: "Plan simple, enjoyable activities",
-          content2: "Creates positive social experiences",
-          image:
-            "https://images.pexels.com/photos/3768894/pexels-photo-3768894.jpeg",
-        },
-      ],
-    },
-    Schizophrenia: {
-      "High Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Try guided breathing 🧘",
-          content1: "Follow simple breathing patterns",
-          content2: "Anchors attention to present",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Take short walks 🏃",
-          content1: "Walk in familiar, safe areas",
-          content2: "Provides gentle physical activity",
-          image:
-            "https://images.pexels.com/photos/1448055/pexels-photo-1448055.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Stick to a strict routine 🔄",
-          content1: "Create detailed daily schedule",
-          content2: "Maintains structure and stability",
-          image:
-            "https://images.pexels.com/photos/3822711/pexels-photo-3822711.jpeg",
-        },
-      ],
-      "Moderate Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Engage in a mindfulness session 🧘",
-          content1: "Use simple grounding techniques",
-          content2: "Helps distinguish reality",
-          image:
-            "https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Exercise for 10 minutes 🏃",
-          content1: "Choose low-impact movements",
-          content2: "Improves physical well-being",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Set daily goals 🔄",
-          content1: "Start with small, achievable tasks",
-          content2: "Builds confidence gradually",
-          image:
-            "https://images.pexels.com/photos/3059747/pexels-photo-3059747.jpeg",
-        },
-      ],
-      "Low Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Practice slow breathing 🧘",
-          content1: "Count breaths to maintain focus",
-          content2: "Promotes mental clarity",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Join a social group 🏃",
-          content1: "Start with small group activities",
-          content2: "Builds social connections safely",
-          image:
-            "https://images.pexels.com/photos/5793913/pexels-photo-5793913.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Practice self-care daily 🔄",
-          content1: "Maintain basic hygiene routine",
-          content2: "Enhances personal well-being",
-          image:
-            "https://images.pexels.com/photos/3822711/pexels-photo-3822711.jpeg",
-        },
-      ],
-    },
-    ADHD: {
-      "High Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Try breathing exercises 🧘",
-          content1: "Use visual breathing guides",
-          content2: "Improves focus and calm",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Go for a brisk walk 🏃",
-          content1: "Set a specific route and time",
-          content2: "Releases excess energy",
-          image:
-            "https://images.pexels.com/photos/1448055/pexels-photo-1448055.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Use a planner to organize your day 🔄",
-          content1: "Break tasks into small steps",
-          content2: "Reduces overwhelm and forgetfulness",
-          image:
-            "https://images.pexels.com/photos/3059747/pexels-photo-3059747.jpeg",
-        },
-      ],
-      "Moderate Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Use relaxation apps 🧘",
-          content1: "Try apps with interactive features",
-          content2: "Provides structured guidance",
-          image:
-            "https://images.pexels.com/photos/4049990/pexels-photo-4049990.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Take a short break every hour 🏃",
-          content1: "Set reminders for movement breaks",
-          content2: "Maintains focus and energy",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Break tasks into smaller steps 🔄",
-          content1: "Use checklists for each task",
-          content2: "Makes progress more visible",
-          image:
-            "https://images.pexels.com/photos/3822711/pexels-photo-3822711.jpeg",
-        },
-      ],
-      "Low Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Practice meditation 🧘",
-          content1: "Start with 2-minute sessions",
-          content2: "Builds attention span gradually",
-          image:
-            "https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Do yoga 🏃",
-          content1: "Choose dynamic flowing sequences",
-          content2: "Combines movement and mindfulness",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Use timers for task management 🔄",
-          content1: "Set specific time blocks for tasks",
-          content2: "Improves time awareness",
-          image:
-            "https://images.pexels.com/photos/3059747/pexels-photo-3059747.jpeg",
-        },
-      ],
-    },
-    BPD: {
-      "High Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Practice deep breathing 🧘",
-          content1: "Use the 5-5-5 breathing technique",
-          content2: "Stabilizes emotional responses",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Go for a jog 🏃",
-          content1: "Start with alternating walk/jog",
-          content2: "Releases emotional tension",
-          image:
-            "https://images.pexels.com/photos/1448055/pexels-photo-1448055.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Write your emotions in a journal 🔄",
-          content1: "Track emotions and triggers daily",
-          content2: "Identifies patterns and needs",
-          image:
-            "https://images.pexels.com/photos/3059747/pexels-photo-3059747.jpeg",
-        },
-      ],
-      "Moderate Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Try guided imagery 🧘",
-          content1: "Create a safe mental space",
-          content2: "Provides emotional refuge",
-          image:
-            "https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Take a break to clear your mind 🏃",
-          content1: "Change environment briefly",
-          content2: "Interrupts intense emotions",
-          image:
-            "https://images.pexels.com/photos/4049990/pexels-photo-4049990.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Limit caffeine intake 🔄",
-          content1: "Switch to herbal alternatives",
-          content2: "Reduces emotional volatility",
-          image:
-            "https://images.pexels.com/photos/5501104/pexels-photo-5501104.jpeg",
-        },
-      ],
-      "Low Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Use aromatherapy 🧘",
-          content1: "Choose calming essential oils",
-          content2: "Creates soothing environment",
-          image:
-            "https://images.pexels.com/photos/3059748/pexels-photo-3059748.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Engage in gentle stretching 🏃",
-          content1: "Focus on body sensations",
-          content2: "Increases body awareness",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Talk to someone you trust 🔄",
-          content1: "Schedule regular check-ins",
-          content2: "Maintains support system",
-          image:
-            "https://images.pexels.com/photos/5793913/pexels-photo-5793913.jpeg",
-        },
-      ],
-    },
-    EatingDisorders: {
-      "High Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Try guided meditation 🧘",
-          content1: "Focus on self-compassion",
-          content2: "Builds positive self-image",
-          image:
-            "https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Engage in mindful walking 🏃",
-          content1: "Notice surroundings mindfully",
-          content2: "Connects mind and body",
-          image:
-            "https://images.pexels.com/photos/1448055/pexels-photo-1448055.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Use positive affirmations 🔄",
-          content1: "Practice self-acceptance statements",
-          content2: "Strengthens self-worth",
-          image:
-            "https://images.pexels.com/photos/3822711/pexels-photo-3822711.jpeg",
-        },
-      ],
-      "Moderate Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Practice mindful eating 🧘",
-          content1: "Eat slowly and mindfully",
-          content2: "Develops healthy relationship with food",
-          image:
-            "https://images.pexels.com/photos/3822583/pexels-photo-3822583.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Go for a walk with a friend 🏃",
-          content1: "Focus on conversation and connection",
-          content2: "Provides social support",
-          image:
-            "https://images.pexels.com/photos/5793913/pexels-photo-5793913.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Journal about your day 🔄",
-          content1: "Write about feelings and experiences",
-          content2: "Processes emotions safely",
-          image:
-            "https://images.pexels.com/photos/3059747/pexels-photo-3059747.jpeg",
-        },
-      ],
-      "Low Risk": [
-        {
-          type: "Relaxation",
-          suggestion: "Listen to calming music 🧘",
-          content1: "Create a peaceful playlist",
-          content2: "Soothes anxiety and stress",
-          image:
-            "https://images.pexels.com/photos/4126743/pexels-photo-4126743.jpeg",
-        },
-        {
-          type: "Activity",
-          suggestion: "Do gentle stretching 🏃",
-          content1: "Move with kindness to body",
-          content2: "Promotes body acceptance",
-          image:
-            "https://images.pexels.com/photos/4056535/pexels-photo-4056535.jpeg",
-        },
-        {
-          type: "Habit",
-          suggestion: "Practice self-compassion daily 🔄",
-          content1: "Treat yourself with kindness",
-          content2: "Builds resilience and self-worth",
-          image:
-            "https://images.pexels.com/photos/3822711/pexels-photo-3822711.jpeg",
-        },
-      ],
-    },
-  };
+  Depression: {
+    "High Risk": [
+      {
+        type: "Relaxation",
+        suggestion: "Try 10 minutes of deep breathing 🧘",
+        content1: "Find a quiet space and focus on slow, rhythmic breaths",
+        content2: "Reduces stress hormones and calms the nervous system",
+        image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597",
+        youtubeLink: "https://www.youtube.com/watch?v=VUjiXcfKBn8&t=2s"
+      },
+      {
+        type: "Activity",
+        suggestion: "Go for a 15-minute walk in nature 🏃",
+        content1: "Walk in a park or green space, observing trees and birds",
+        content2: "Boosts serotonin and vitamin D exposure",
+        image: "https://images.unsplash.com/photo-1476231682828-37e571bc172f",
+        youtubeLink: "https://www.youtube.com/watch?v=uelJ5LtmrV0"
+      },
+      {
+        type: "Habit",
+        suggestion: "Practice guided meditation 🔄",
+        content1: "Use apps like Headspace or YouTube for guided sessions",
+        content2: "Enhances mindfulness and emotional balance",
+        image: "https://images.unsplash.com/photo-1545389336-cf090694435e",
+        youtubeLink: "https://www.youtube.com/watch?v=WLTkxWoQt-4"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Habit",
+        suggestion: "Write down 3 things you’re grateful for 📝",
+        content1: "Reflect on small joys (e.g., sunshine, a friend’s smile)",
+        content2: "Shifts focus from negativity to positivity",
+        image: "https://images.unsplash.com/photo-1518655048521-f130df041f66",
+        youtubeLink: "https://www.youtube.com/watch?v=eiRCuujt8P0"
+      },
+      {
+        type: "Activity",
+        suggestion: "Do light stretching or yoga for 10 minutes 🧘",
+        content1: "Try gentle poses like child’s pose or seated forward bend",
+        content2: "Releases muscle tension and improves circulation",
+        image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+        youtubeLink: "https://www.youtube.com/watch?v=3X0hEHop8ec"
+      },
+      {
+        type: "Relaxation",
+        suggestion: "Listen to calming music 🎵",
+        content1: "Choose instrumental or nature sounds (e.g., piano, rain)",
+        content2: "Lowers cortisol levels and induces relaxation",
+        image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad",
+        youtubeLink: "https://www.youtube.com/watch?v=TKeU1bLlAcc&list=PL_DaWb6RFQc39EDKQ-P3iEtg7osX8jfb-"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Activity",
+        suggestion: "Engage in a hobby you enjoy 🎨",
+        content1: "Drawing, gardening, or playing music",
+        content2: "Provides a sense of accomplishment",
+        image: "https://images.unsplash.com/photo-1611605698323-b1e99cfd37ea",
+        youtubeLink: "https://www.youtube.com/watch?v=o5dY2Pnww6A"
+      },
+      {
+        type: "Habit",
+        suggestion: "Call a friend and have a short chat 📞",
+        content1: "Share a light conversation or memory",
+        content2: "Strengthens social connections",
+        image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7",
+        youtubeLink: "https://www.youtube.com/watch?v=fR7wUgpFnds&t=25s"
+      },
+      {
+        type: "Relaxation",
+        suggestion: "Do a 5-minute mindfulness exercise 🧠",
+        content1: "Focus on your breath or a sensory object (e.g., a candle)",
+        content2: "Grounds you in the present moment",
+        image: "https://images.unsplash.com/photo-1549880338-65ddcdfd017b",
+        youtubeLink: "https://www.youtube.com/watch?v=ssss7V1_eyA"
+      }
+    ]
+  },
+  Anxiety: {
+    "High Risk": [
+      {
+        type: "Relaxation",
+        suggestion: "Try progressive muscle relaxation 💆",
+        content1: "Tense and release muscles from toes to head",
+        content2: "Reduces physical symptoms of anxiety",
+        image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b",
+        youtubeLink: "https://www.youtube.com/watch?v=SNqYG95j_UQ&t=2s"
+      },
+      {
+        type: "Activity",
+        suggestion: "Use the 4-7-8 breathing technique 🌬️",
+        content1: "Inhale for 4s, hold for 7s, exhale for 8s",
+        content2: "Activates the parasympathetic nervous system",
+        image: "https://images.unsplash.com/photo-1518604666860-9ed391f76460",
+        youtubeLink: "https://www.youtube.com/watch?v=LiUnFJ8P4gM&t=2s"
+      },
+      {
+        type: "Habit",
+        suggestion: "Write down your thoughts to clear your mind 📔",
+        content1: "Journal intrusive thoughts without judgment",
+        content2: "Creates mental distance from worries",
+        image: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
+        youtubeLink: "https://www.youtube.com/watch?v=_5YooSxz1tM"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Relaxation",
+        suggestion: "Listen to nature sounds or white noise 🌊",
+        content1: "Rain, forest, or ocean soundscapes",
+        content2: "Masks anxiety-inducing background noise",
+        image: "https://images.unsplash.com/photo-1511497584788-876760111969",
+        youtubeLink: "https://www.youtube.com/watch?v=eNUpTV9BGac&t=2s"
+      },
+      {
+        type: "Activity",
+        suggestion: "Take a 15-minute break from screens 📵",
+        content1: "Step away from phones/computers",
+        content2: "Reduces sensory overload",
+        image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
+        youtubeLink: "https://www.youtube.com/watch?v=WRJ1E2FTUNE&t=25s"
+      },
+      {
+        type: "Habit",
+        suggestion: "Try a short visualization exercise 🌅",
+        content1: "Imagine a peaceful place (e.g., beach, mountains)",
+        content2: "Redirects focus from anxiety triggers",
+        image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e",
+        youtubeLink: "https://www.youtube.com/watch?v=Z4_ahk-2MZc&t=27s"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Relaxation",
+        suggestion: "Practice slow, deep breathing for 5 minutes 🌿",
+        content1: "Belly breathing with hand on abdomen",
+        content2: "Slows heart rate and promotes calm",
+        image: "https://images.unsplash.com/photo-1527525443983-6e60c75fff46",
+        youtubeLink: "https://www.youtube.com/watch?v=DbDoBzGY3vo"
+      },
+      {
+        type: "Activity",
+        suggestion: "Drink herbal tea and relax ☕",
+        content1: "Chamomile, peppermint, or lavender tea",
+        content2: "Natural calming properties",
+        image: "https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9",
+        youtubeLink: "https://www.youtube.com/watch?v=U3xiIRnTahI&t=2s"
+      },
+      {
+        type: "Habit",
+        suggestion: "Read a book for 10 minutes 📖",
+        content1: "Fiction or inspirational content",
+        content2: "Distracts from anxious thoughts",
+        image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f",
+        youtubeLink: "https://www.youtube.com/watch?v=zluGYFV0c20&t=38s"
+      }
+    ]
+  },
+  Bipolar: {
+    "High Risk": [
+      {
+        type: "Relaxation",
+        suggestion: "Engage in grounding techniques like 5-4-3-2-1 🧘",
+        content1: "Name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste",
+        content2: "Anchors you to the present moment",
+        image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef",
+        youtubeLink: "https://www.youtube.com/watch?v=30VMIEmA114"
+      },
+      {
+        type: "Activity",
+        suggestion: "Try slow-paced walking in a quiet area 🚶",
+        content1: "Walk mindfully, noticing each step",
+        content2: "Stabilizes mood and energy levels",
+        image: "https://images.unsplash.com/photo-1470004914212-05527e49370b",
+        youtubeLink: "https://www.youtube.com/watch?v=9LOBQ50gUAA"
+      },
+      {
+        type: "Habit",
+        suggestion: "Listen to calm instrumental music 🎼",
+        content1: "Choose slow-tempo classical or ambient music",
+        content2: "Regulates emotional responses",
+        image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+        youtubeLink: "https://www.youtube.com/watch?v=xxhnfcC_4B8"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Activity",
+        suggestion: "Do a 10-minute gentle yoga session 🧘",
+        content1: "Focus on restorative poses (e.g., legs up the wall)",
+        content2: "Promotes relaxation without overstimulation",
+        image: "https://images.unsplash.com/photo-1545389336-cf090694435e",
+        youtubeLink: "https://www.youtube.com/watch?v=6bq2uUN-oSY"
+      },
+      {
+        type: "Habit",
+        suggestion: "Keep a mood journal for self-awareness 📓",
+        content1: "Track mood swings, triggers, and sleep patterns",
+        content2: "Identifies early warning signs of episodes",
+        image: "https://images.unsplash.com/photo-1517842645767-c639042777db",
+        youtubeLink: "https://www.youtube.com/watch?v=f60QFL9rJd0"
+      },
+      {
+        type: "Relaxation",
+        suggestion: "Practice self-affirmations 💬",
+        content1: "Repeat positive statements (e.g., 'I am stable')",
+        content2: "Counters negative thought patterns",
+        image: "https://images.unsplash.com/photo-1491897554428-130a60dd4757",
+        youtubeLink: "https://www.youtube.com/watch?v=yo1pJ_D-H3M"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Activity",
+        suggestion: "Engage in light exercise like jogging 🏃",
+        content1: "Start with 10-15 minutes at a comfortable pace",
+        content2: "Balances energy levels naturally",
+        image: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5",
+        youtubeLink: "https://www.youtube.com/watch?v=v6gxmBerTeM"
+      },
+      {
+        type: "Habit",
+        suggestion: "Practice mindful eating for a meal 🍽️",
+        content1: "Eat slowly, savoring each bite without distractions",
+        content2: "Improves relationship with food and body",
+        image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061",
+        youtubeLink: "https://www.youtube.com/watch?v=u1jRaHrpokA&t=113s"
+      },
+      {
+        type: "Relaxation",
+        suggestion: "Do deep breathing exercises 🌬️",
+        content1: "Inhale for 4s, exhale for 6s",
+        content2: "Regulates the nervous system",
+        image: "https://images.unsplash.com/photo-1527525443983-6e60c75fff46",
+        youtubeLink: "https://www.youtube.com/watch?v=acUZdGd_3Dg"
+      }
+    ]
+  },
+  OCD: {
+    "High Risk": [
+      {
+        type: "Habit",
+        suggestion: "Use exposure-response prevention techniques 🛑",
+        content1: "Delay compulsions gradually (start with 5 minutes)",
+        content2: "Reduces anxiety over time",
+        image: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2",
+        youtubeLink: "https://www.youtube.com/watch?v=JlVID74KTOM"
+      },
+      {
+        type: "Relaxation",
+        suggestion: "Try 5 minutes of guided meditation 🧘",
+        content1: "Focus on a mantra (e.g., 'This too shall pass')",
+        content2: "Creates mental space from intrusive thoughts",
+        image: "https://images.unsplash.com/photo-1513366208864-87536b8bd7b4",
+        youtubeLink: "https://www.youtube.com/watch?v=Lf6FpYcsziw"
+      },
+      {
+        type: "Activity",
+        suggestion: "Write down intrusive thoughts and challenge them 📝",
+        content1: "Ask: 'Is this thought factual or exaggerated?'",
+        content2: "Builds cognitive flexibility",
+        image: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
+        youtubeLink: "https://www.youtube.com/watch?v=V3vhXQy48jo"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Activity",
+        suggestion: "Take a short break from triggers 🚶",
+        content1: "Step away from triggering situations temporarily",
+        content2: "Prevents compulsive responses",
+        image: "https://images.unsplash.com/photo-1517486808906-6ca8b3f8e4c2",
+        youtubeLink: "https://www.youtube.com/watch?v=l3i8SfOk5FU"
+      },
+      {
+        type: "Relaxation",
+        suggestion: "Practice progressive relaxation 💆",
+        content1: "Tense and relax muscles one group at a time",
+        content2: "Reduces physical tension linked to anxiety",
+        image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b",
+        youtubeLink: "https://www.youtube.com/watch?v=SNqYG95j_UQ&t=4s"
+      },
+      {
+        type: "Habit",
+        suggestion: "Engage in a calming activity like drawing 🎨",
+        content1: "Doodle, color, or sketch freely",
+        content2: "Redirects focus from compulsions",
+        image: "https://images.unsplash.com/photo-1611605698323-b1e99cfd37ea",
+        youtubeLink: "https://www.youtube.com/watch?v=GMSC95hEj2w"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Relaxation",
+        suggestion: "Practice deep breathing with slow exhales 🌬️",
+        content1: "Extend exhales longer than inhales (e.g., 4s in, 6s out)",
+        content2: "Activates the body’s relaxation response",
+        image: "https://images.unsplash.com/photo-1518604666860-9ed391f76460",
+        youtubeLink: "https://www.youtube.com/watch?v=JJfYqWSAMCg"
+      },
+      {
+        type: "Habit",
+        suggestion: "Listen to soft music and relax 🎵",
+        content1: "Choose instrumental or nature sounds",
+        content2: "Soothes the mind without overstimulation",
+        image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad",
+        youtubeLink: "https://www.youtube.com/watch?v=qsEBaIMCKl4"
+      },
+      {
+        type: "Activity",
+        suggestion: "Try focusing on one simple task at a time 🎯",
+        content1: "Complete a small task (e.g., folding laundry) mindfully",
+        content2: "Trains the brain to resist multitasking urges",
+        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f",
+        youtubeLink: "https://www.youtube.com/watch?v=mMIK5u4xdh8"
+      }
+    ]
+  },
+  PTSD: {
+    "High Risk": [
+      {
+        type: "Relaxation",
+        suggestion: "Try grounding techniques (hold an object, describe it) ✋",
+        content1: "Hold a cold object or describe your surroundings aloud",
+        content2: "Anchors you to the present moment",
+        image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef",
+        youtubeLink: "https://www.youtube.com/watch?v=5a88mUAzNLk"
+      },
+      {
+        type: "Activity",
+        suggestion: "Do 4-7-8 breathing for relaxation 🌬️",
+        content1: "Inhale for 4s, hold for 7s, exhale for 8s",
+        content2: "Calms the nervous system quickly",
+        image: "https://images.unsplash.com/photo-1518604666860-9ed391f76460",
+        youtubeLink: "https://www.youtube.com/watch?v=kpSkoXRrZnE"
+      },
+      {
+        type: "Habit",
+        suggestion: "Write in a trauma journal 📔",
+        content1: "Express emotions safely on paper",
+        content2: "Processes traumatic memories gradually",
+        image: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
+        youtubeLink: "https://www.youtube.com/watch?v=dcfNwx5vfR0"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Relaxation",
+        suggestion: "Practice mindfulness for 5 minutes 🧘",
+        content1: "Focus on your breath or a sensory object",
+        content2: "Reduces hypervigilance",
+        image: "https://images.unsplash.com/photo-1549880338-65ddcdfd017b",
+        youtubeLink: "https://www.youtube.com/watch?v=I-SFdhVwrVA"
+      },
+      {
+        type: "Activity",
+        suggestion: "Engage in slow, rhythmic movement (walking, stretching) 🚶",
+        content1: "Sync movement with breath (e.g., step on inhale/exhale)",
+        content2: "Regulates the nervous system",
+        image: "https://images.unsplash.com/photo-1470004914212-05527e49370b",
+        youtubeLink: "https://www.youtube.com/watch?v=62-KAP9mDI8"
+      },
+      {
+        type: "Habit",
+        suggestion: "Listen to soothing music 🎵",
+        content1: "Choose familiar, calming tracks",
+        content2: "Provides emotional safety",
+        image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+        youtubeLink: "https://www.youtube.com/watch?v=SdcAN3dobz4&list=RDQM5Auu_J59opM&start_radio=1"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Activity",
+        suggestion: "Try positive visualization techniques 🌈",
+        content1: "Imagine a safe, peaceful place in detail",
+        content2: "Counters traumatic imagery",
+        image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e",
+        youtubeLink: "https://www.youtube.com/watch?v=erWCdK_S5Bc"
+      },
+      {
+        type: "Relaxation",
+        suggestion: "Engage in light exercise or stretching 🧘",
+        content1: "Gentle yoga or tai chi",
+        content2: "Releases stored tension",
+        image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+        youtubeLink: "https://www.youtube.com/watch?v=FI51zRzgIe4"
+      },
+      {
+        type: "Habit",
+        suggestion: "Spend time in a quiet, safe space 🏡",
+        content1: "Create a comforting environment (e.g., soft lighting)",
+        content2: "Promotes feelings of security",
+        image: "https://images.unsplash.com/photo-1513694203232-719a280e022f",
+        youtubeLink: "https://www.youtube.com/watch?v=reMKNFTxXBw"
+      }
+    ]
+  },
+  "Suicide Watch": {
+    "High Risk": [
+      {
+        type: "Emergency",
+        suggestion: "Immediately reach out to a mental health professional 🆘",
+        content1: "Call your therapist, crisis hotline, or trusted provider",
+        content2: "Professional support can provide immediate safety planning",
+        image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef",
+        youtubeLink: "https://www.youtube.com/watch?v=InDEc1sDfE4"
+      },
+      {
+        type: "Support",
+        suggestion: "Call a trusted friend or family member 📞",
+        content1: "Reach out to someone who understands your struggle",
+        content2: "Social connection reduces isolation during crisis",
+        image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7",
+        youtubeLink: "https://www.youtube.com/watch?v=-hKUHiIwbrM"
+      },
+      {
+        type: "Grounding",
+        suggestion: "Try a sensory grounding exercise ✋",
+        content1: "Hold ice cubes or splash cold water on your face",
+        content2: "Activates the dive reflex to calm nervous system",
+        image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef",
+        youtubeLink: "https://www.youtube.com/watch?v=o-peeAE80C0"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Reflection",
+        suggestion: "Write a letter to your future self 📝",
+        content1: "Describe hopes for your future self to read later",
+        content2: "Creates connection with your future wellbeing",
+        image: "https://images.unsplash.com/photo-1518655048521-f130df041f66",
+        youtubeLink: "https://www.youtube.com/watch?v=lq2AGr0gRhs"
+      },
+      {
+        type: "Sensory",
+        suggestion: "Listen to uplifting music 🎵",
+        content1: "Choose songs with positive memories or lyrics",
+        content2: "Music can shift emotional states",
+        image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+        youtubeLink: "https://www.youtube.com/watch?v=tkql_yvuSK0&list=PLvx1Z92uzO9PhwqcXbMml-14j-ALCkXVY"
+      },
+      {
+        type: "Self-Care",
+        suggestion: "Practice comforting self-care 🛁",
+        content1: "Take a warm bath with soothing scents",
+        content2: "Physical comfort can ease emotional pain",
+        image: "https://images.unsplash.com/photo-1556228453-efd6c1ff04f6",
+        youtubeLink: "https://www.youtube.com/watch?v=cjfofAuxibQ"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Motivation",
+        suggestion: "Watch an inspirational video 🌟",
+        content1: "Find stories of people who overcame struggles",
+        content2: "Provides hope and perspective",
+        image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9",
+        youtubeLink: "https://www.youtube.com/watch?v=KgX3aK0gX9c"
+      },
+      {
+        type: "Expression",
+        suggestion: "Journal your emotions 📔",
+        content1: "Write freely without filtering thoughts",
+        content2: "Externalizes and processes difficult feelings",
+        image: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
+        youtubeLink: "https://www.youtube.com/watch?v=WI-j39vOqmk"
+      },
+      {
+        type: "Connection",
+        suggestion: "Spend time with loved ones 👨‍👩‍👧‍👦",
+        content1: "Be physically present with supportive people",
+        content2: "Counteracts feelings of isolation",
+        image: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70",
+        youtubeLink: "https://www.youtube.com/watch?v=SC0tl8wD31s"
+      }
+    ]
+  },
+  "ADHD": {
+    "High Risk": [
+      {
+        type: "Structure",
+        suggestion: "Create a step-by-step daily routine 📅",
+        content1: "Break tasks into 15-30 minute blocks with breaks",
+        content2: "Provides external structure for focus",
+        image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b",
+        youtubeLink: "https://www.youtube.com/watch?v=9dsjGQnl4H0"
+      },
+      {
+        type: "Focus",
+        suggestion: "Use the Pomodoro technique ⏱️",
+        content1: "Work for 25 minutes, then 5-minute break",
+        content2: "Manages attention in manageable chunks",
+        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f",
+        youtubeLink: "https://www.youtube.com/watch?v=1pADI_eZ_-U"
+      },
+      {
+        type: "Movement",
+        suggestion: "Do short bursts of physical activity 🏃",
+        content1: "Try jumping jacks or dancing for 2-3 minutes",
+        content2: "Channels excess energy productively",
+        image: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5",
+        youtubeLink: "https://www.youtube.com/watch?v=nMV_xkndnWk"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Exercise",
+        suggestion: "Try quick exercise breaks 💪",
+        content1: "Stretching, pushups, or yoga flows",
+        content2: "Regulates dopamine and norepinephrine",
+        image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b",
+        youtubeLink: "https://www.youtube.com/watch?v=hb_dempqaJo"
+      },
+      {
+        type: "Sensory",
+        suggestion: "Use fidget tools 🧩",
+        content1: "Stress balls, putty, or spinner rings",
+        content2: "Provides tactile stimulation for focus",
+        image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e",
+        youtubeLink: "https://www.youtube.com/watch?v=Uh7cI5roSFM"
+      },
+      {
+        type: "Meditation",
+        suggestion: "Try moving meditation 🧘",
+        content1: "Walking meditation or tai chi",
+        content2: "Combines movement with mindfulness",
+        image: "https://images.unsplash.com/photo-1548602088-9d12a4f9c839",
+        youtubeLink: "https://www.youtube.com/watch?v=5kdfJAU7ihA"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Breathing",
+        suggestion: "Practice box breathing 🌬️",
+        content1: "Inhale 4s, hold 4s, exhale 4s, hold 4s",
+        content2: "Calms the nervous system",
+        image: "https://images.unsplash.com/photo-1527525443983-6e60c75fff46",
+        youtubeLink: "https://www.youtube.com/watch?v=ZfMA0YA1IVA"
+      },
+      {
+        type: "Music",
+        suggestion: "Listen to focus-enhancing music 🎼",
+        content1: "Binaural beats or lo-fi instrumental",
+        content2: "Supports sustained attention",
+        image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad",
+        youtubeLink: "https://www.youtube.com/watch?v=tdzSYc5HmSU"
+      },
+      {
+        type: "Organization",
+        suggestion: "Declutter your workspace 🗑️",
+        content1: "Clear visual distractions from work area",
+        content2: "Reduces competing stimuli",
+        image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38",
+        youtubeLink: "https://www.youtube.com/watch?v=rXCxnk6ANDk"
+      }
+    ]
+  },
+  "BPD": {
+    "High Risk": [
+      {
+        type: "Therapy",
+        suggestion: "Try TIPP skill (Temperature, Intense exercise, Paced breathing, Paired muscle relaxation) 🧊",
+        content1: "Hold ice, do jumping jacks, then deep breathing",
+        content2: "DBT technique for emotional regulation",
+        image: "https://images.unsplash.com/photo-1551650975-87deedd944c3",
+        youtubeLink: "https://www.youtube.com/watch?v=Yf64blB4Du8"
+      },
+      {
+        type: "Grounding",
+        suggestion: "Practice 5-4-3-2-1 technique 🌍",
+        content1: "Name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste",
+        content2: "Brings focus to present moment",
+        image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef",
+        youtubeLink: "https://www.youtube.com/watch?v=30VMIEmA114&t=9s"
+      },
+      {
+        type: "Comfort",
+        suggestion: "Use a weighted blanket 🛏️",
+        content1: "15-20 minutes under 10% of body weight",
+        content2: "Deep pressure calms nervous system",
+        image: "https://images.unsplash.com/photo-1513694203232-719a280e022f",
+        youtubeLink: "https://www.youtube.com/watch?v=UhuOoDgevCE"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Expression",
+        suggestion: "Write then analyze emotions 📝",
+        content1: "Describe feelings then challenge extreme thoughts",
+        content2: "Creates emotional distance",
+        image: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
+        youtubeLink: "https://www.youtube.com/watch?v=_DukOlChQQQ"
+      },
+      {
+        type: "Creativity",
+        suggestion: "Engage in art therapy 🎨",
+        content1: "Paint/draw emotions abstractly",
+        content2: "Non-verbal emotional expression",
+        image: "https://images.unsplash.com/photo-1611605698323-b1e99cfd37ea",
+        youtubeLink: "https://www.youtube.com/watch?v=N0prIN3PCB4"
+      },
+      {
+        type: "Audio",
+        suggestion: "Listen to calming podcasts 🎧",
+        content1: "Choose mental health or mindfulness topics",
+        content2: "Provides distraction and education",
+        image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618",
+        youtubeLink: "https://www.youtube.com/watch?v=C9np6f1PgMY"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Distraction",
+        suggestion: "Watch lighthearted movies 🎬",
+        content1: "Choose comedies or nostalgic favorites",
+        content2: "Temporarily shifts emotional state",
+        image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba",
+        youtubeLink: "https://www.youtube.com/watch?v=dD95Ve5VWu4"
+      },
+      {
+        type: "Breathing",
+        suggestion: "Do 4-7-8 breathing 🌬️",
+        content1: "Inhale 4s, hold 7s, exhale 8s",
+        content2: "Regulates autonomic nervous system",
+        image: "https://images.unsplash.com/photo-1518604666860-9ed391f76460",
+        youtubeLink: "https://www.youtube.com/watch?v=737vA-okV5E"
+      },
+      {
+        type: "Connection",
+        suggestion: "Brief check-in with friend 📱",
+        content1: "Short text/voice message exchange",
+        content2: "Maintains social connection",
+        image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7",
+        youtubeLink: "https://www.youtube.com/watch?v=ur48jVNNlKk"
+      }
+    ]
+  },
+  "Autism": {
+    "High Risk": [
+      {
+        type: "Sensory",
+        suggestion: "Use deep pressure therapy 🛌",
+        content1: "Weighted blanket or firm hug from trusted person",
+        content2: "Regulates proprioceptive input",
+        image: "https://images.unsplash.com/photo-1513694203232-719a280e022f",
+        youtubeLink: "https://www.youtube.com/watch?v=BTFDy-coni4"
+      },
+      {
+        type: "Environment",
+        suggestion: "Wear noise-canceling headphones 🎧",
+        content1: "Block overwhelming auditory stimuli",
+        content2: "Reduces sensory overload",
+        image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df",
+        youtubeLink: "https://www.youtube.com/watch?v=_tSIeZYEeCM"
+      },
+      {
+        type: "Stimming",
+        suggestion: "Engage in safe stimming 🤸",
+        content1: "Rocking, hand-flapping with safe space",
+        content2: "Self-regulates nervous system",
+        image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+        youtubeLink: "https://www.youtube.com/watch?v=F5H17FHYa-k"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Movement",
+        suggestion: "Try repetitive physical activity 🔄",
+        content1: "Pacing, swinging, or rocking chair",
+        content2: "Provides predictable sensory input",
+        image: "https://images.unsplash.com/photo-1470004914212-05527e49370b",
+        youtubeLink: "https://www.youtube.com/watch?v=0jxuJMXd2KI"
+      },
+      {
+        type: "Breathing",
+        suggestion: "Structured breathing exercises 🧘",
+        content1: "Follow visual breathing guide (square pattern)",
+        content2: "Creates predictable routine",
+        image: "https://images.unsplash.com/photo-1527525443983-6e60c75fff46",
+        youtubeLink: "https://www.youtube.com/watch?v=bF_1ZiFta-E"
+      },
+      {
+        type: "Cognitive",
+        suggestion: "Solve puzzles or memory games 🧩",
+        content1: "Jigsaw puzzles, matching games",
+        content2: "Provides structured mental focus",
+        image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e",
+        youtubeLink: "https://www.youtube.com/watch?v=f06l3-Gujo4"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Environment",
+        suggestion: "Spend time in quiet space 🤫",
+        content1: "Low-stimulation area with comfort items",
+        content2: "Allows nervous system to reset",
+        image: "https://images.unsplash.com/photo-1513694203232-719a280e022f",
+        youtubeLink: "https://www.youtube.com/watch?v=JDpULX1MnPI"
+      },
+      {
+        type: "Audio",
+        suggestion: "Listen to familiar music 🎵",
+        content1: "Preferred songs at low volume",
+        content2: "Predictable auditory input",
+        image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+        youtubeLink: "https://www.youtube.com/watch?v=nCNqPgXDYhY"
+      },
+      {
+        type: "Routine",
+        suggestion: "Follow structured schedule 📅",
+        content1: "Visual timetable of daily activities",
+        content2: "Reduces anxiety about uncertainty",
+        image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b",
+        youtubeLink: "https://www.youtube.com/watch?v=7jexR_hd6L8"
+      }
+    ]
+  },
+  "Schizophrenia": {
+    "High Risk": [
+      {
+        type: "Support",
+        suggestion: "Contact trusted support person immediately 🆘",
+        content1: "Reach out to therapist/case manager",
+        content2: "Professional guidance during symptoms",
+        image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef",
+        youtubeLink: "https://www.youtube.com/watch?v=PURvJV2SMso"
+      },
+      {
+        type: "Reality",
+        suggestion: "Use reality testing techniques ✔️",
+        content1: "Ask trusted person to verify experiences",
+        content2: "Grounds in consensual reality",
+        image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef",
+        youtubeLink: "https://www.youtube.com/watch?v=ou14N8Ica6c"
+      },
+      {
+        type: "Distraction",
+        suggestion: "Engage in simple puzzles 🧩",
+        content1: "Crossword, sudoku, or word searches",
+        content2: "Focuses mind on concrete tasks",
+        image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e",
+        youtubeLink: "https://www.youtube.com/watch?v=GFgTnag6270"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Movement",
+        suggestion: "Gentle physical activity 🚶",
+        content1: "Walking or stretching with supervision",
+        content2: "Regulates body without overstimulation",
+        image: "https://images.unsplash.com/photo-1470004914212-05527e49370b",
+        youtubeLink: "https://www.youtube.com/watch?v=UfEvXIvCm-c"
+      },
+      {
+        type: "Audio",
+        suggestion: "Listen to calming nature sounds 🌊",
+        content1: "Rain, ocean waves, or forest sounds",
+        content2: "Soothing non-verbal audio",
+        image: "https://images.unsplash.com/photo-1511497584788-876760111969",
+        youtubeLink: "https://www.youtube.com/watch?v=xRcWlA1I9z0"
+      },
+      {
+        type: "Journal",
+        suggestion: "Write thoughts in symptom journal 📓",
+        content1: "Track experiences without judgment",
+        content2: "Creates record for treatment team",
+        image: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
+        youtubeLink: "https://www.youtube.com/watch?v=7CcZ7gyFXv0"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Reading",
+        suggestion: "Read familiar book 📖",
+        content1: "Choose well-known comforting text",
+        content2: "Provides predictable mental focus",
+        image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f",
+        youtubeLink: "https://www.youtube.com/watch?v=2kKvTi4Ta4Y"
+      },
+      {
+        type: "Breathing",
+        suggestion: "5-minute breathing exercise 🌬️",
+        content1: "Count breaths up to 10, then repeat",
+        content2: "Anchors to physical sensations",
+        image: "https://images.unsplash.com/photo-1527525443983-6e60c75fff46",
+        youtubeLink: "https://www.youtube.com/watch?v=enJyOTvEn4M"
+      },
+      {
+        type: "Relaxation",
+        suggestion: "Progressive muscle relaxation 💆",
+        content1: "Tense/release muscle groups sequentially",
+        content2: "Reduces physical tension",
+        image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b",
+        youtubeLink: "https://www.youtube.com/watch?v=SNqYG95j_UQ&t=2s"
+      }
+    ]
+  },
+  "Eating Disorders": {
+    "High Risk": [
+      {
+        type: "Emergency",
+        suggestion: "Seek professional help immediately 🆘",
+        content1: "Contact treatment team or crisis line",
+        content2: "Prevents medical complications",
+        image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef",
+        youtubeLink: "https://www.youtube.com/watch?v=Rc11eZdZQ8o"
+      },
+      {
+        type: "Affirmation",
+        suggestion: "Repeat body-neutral affirmations 💬",
+        content1: "My worth isn't defined by my body",
+        content2: "Counters disorder thoughts",
+        image: "https://images.unsplash.com/photo-1491897554428-130a60dd4757",
+        youtubeLink: "https://www.youtube.com/watch?v=GRNkLuOyfdE"
+      },
+      {
+        type: "Nutrition",
+        suggestion: "Follow meal plan with support 🍽️",
+        content1: "Use prescribed eating schedule",
+        content2: "Restores biological regularity",
+        image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061",
+        youtubeLink: "https://www.youtube.com/watch?v=RY9PylaHPEA"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Mindful",
+        suggestion: "Practice mindful eating 🥄",
+        content1: "Focus on flavors/textures without judgment",
+        content2: "Rebuilds healthy food relationship",
+        image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061",
+        youtubeLink: "https://www.youtube.com/watch?v=-eFKykI1bJs"
+      },
+      {
+        type: "Emotional",
+        suggestion: "Journal pre-meal emotions 📔",
+        content1: "Identify triggers for disordered behaviors",
+        content2: "Increases self-awareness",
+        image: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
+        youtubeLink: "https://www.youtube.com/watch?v=jpHLFW5e80k"
+      },
+      {
+        type: "Movement",
+        suggestion: "Gentle post-meal stretching 🧘",
+        content1: "Avoid intense exercise after eating",
+        content2: "Promotes digestion without compensation",
+        image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b",
+        youtubeLink: "https://www.youtube.com/watch?v=Y08trWq4J1w"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Walking",
+        suggestion: "Gentle walk with companion 🚶",
+        content1: "10-15 minutes at conversational pace",
+        content2: "Non-punitive movement",
+        image: "https://images.unsplash.com/photo-1470004914212-05527e49370b",
+        youtubeLink: "https://www.youtube.com/watch?v=nRLgcm5uX8o"
+      },
+      {
+        type: "Audio",
+        suggestion: "Listen to recovery podcasts 🎧",
+        content1: "Stories of eating disorder recovery",
+        content2: "Provides hope and perspective",
+        image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618",
+        youtubeLink: "https://www.youtube.com/watch?v=dfyi_U1-N1o"
+      },
+      {
+        type: "Gratitude",
+        suggestion: "Write body gratitude list 🙏",
+        content1: "Thank your body for functions (e.g., walking)",
+        content2: "Shifts focus from appearance",
+        image: "https://images.unsplash.com/photo-1491897554428-130a60dd4757",
+        youtubeLink: "https://www.youtube.com/watch?v=MxPfeAlKDw4"
+      }
+    ]
+  },
+  "Mental Health": {
+    "High Risk": [
+      {
+        type: "Crisis",
+        suggestion: "Contact mental health professional immediately 🆘",
+        content1: "Therapist, psychiatrist, or crisis line",
+        content2: "Professional support during acute distress",
+        image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef",
+        youtubeLink: "https://www.youtube.com/watch?v=nSzacnM1f1g"
+      },
+      {
+        type: "Relaxation",
+        suggestion: "Deep relaxation techniques 🧘",
+        content1: "Progressive muscle relaxation or guided imagery",
+        content2: "Counters fight-or-flight response",
+        image: "https://images.unsplash.com/photo-1548602088-9d12a4f9c839",
+        youtubeLink: "https://www.youtube.com/watch?v=0k9RiH3DMFI"
+      },
+      {
+        type: "Support",
+        suggestion: "Attend support group meeting 👥",
+        content1: "In-person or online peer support",
+        content2: "Reduces isolation with shared experience",
+        image: " https://images.unsplash.com/photo-1529333166437-7750a6dd5a70",
+        youtubeLink: "https://www.youtube.com/watch?v=KigdfV1fu0A"
+      }
+    ],
+    "Moderate Risk": [
+      {
+        type: "Journal",
+        suggestion: "Daily mood journaling 📓",
+        content1: "Track emotions, triggers, and coping strategies",
+        content2: "Identifies patterns and progress",
+        image: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
+        youtubeLink: "https://www.youtube.com/watch?v=TA4-qQ5wEns"
+      },
+      {
+        type: "Meditation",
+        suggestion: "Guided meditation practice 🧘",
+        content1: "10-minute body scan or loving-kindness",
+        content2: "Builds mindfulness skills",
+        image: "https://images.unsplash.com/photo-1548602088-9d12a4f9c839",
+        youtubeLink: "https://www.youtube.com/watch?v=vj0JDwQLof4"
+      },
+      {
+        type: "Movement",
+        suggestion: "Gentle walking outside 🚶",
+        content1: "15-20 minutes in nature if possible",
+        content2: "Combines exercise with sunlight exposure",
+        image: "https://images.unsplash.com/photo-1476231682828-37e571bc172f",
+        youtubeLink: "https://www.youtube.com/watch?v=Fe2AsbGUWW4"
+      }
+    ],
+    "Low Risk": [
+      {
+        type: "Breathing",
+        suggestion: "Diaphragmatic breathing 🌬️",
+        content1: "Belly breathing for 5 minutes",
+        content2: "Activates parasympathetic nervous system",
+        image: "https://images.unsplash.com/photo-1527525443983-6e60c75fff46",
+        youtubeLink: "https://www.youtube.com/watch?v=Mg2ar-7_HfA"
+      },
+      {
+        type: "Media",
+        suggestion: "Watch uplifting content 📺",
+        content1: "Inspirational talks or comedy",
+        content2: "Temporarily boosts mood",
+        image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9",
+        youtubeLink: "https://www.youtube.com/watch?v=W6wVU5b5nQk"
+      },
+      {
+        type: "Social",
+        suggestion: "Brief social connection 📱",
+        content1: "Text/call a supportive friend",
+        content2: "Maintains important relationships",
+        image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7",
+        youtubeLink: "https://www.youtube.com/watch?v=x1EYcVpQeeE"
+      }
+    ]
+  }
+};
 
   // State management
   const [selectedCondition, setSelectedCondition] = useState("");
   const [selectedRiskLevel, setSelectedRiskLevel] = useState("");
   const [habitData, setHabitData] = useState({});
   const [showAddAnimation, setShowAddAnimation] = useState(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [currentVideoLink, setCurrentVideoLink] = useState("");
 
   // Load habit data from localStorage on component mount
   useEffect(() => {
@@ -764,6 +1008,17 @@ function ChatbotSuggestionPage() {
   useEffect(() => {
     localStorage.setItem("habitTrackerData", JSON.stringify(habitData));
   }, [habitData]);
+
+  const handleOpenVideo = (link) => {
+    setCurrentVideoLink(link);
+    setShowVideoModal(true);
+  };
+
+  // Handle closing video modal
+  const handleCloseVideo = () => {
+    setShowVideoModal(false);
+    setCurrentVideoLink("");
+  };
 
   // Handle condition change
   const handleConditionChange = (e) => {
@@ -931,6 +1186,31 @@ function ChatbotSuggestionPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-blue-50 to-purple-50 py-8 px-4">
       <div className="container mx-auto max-w-6xl">
+        {/* Video Modal */}
+        {showVideoModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl overflow-hidden w-full max-w-4xl">
+              <div className="relative pb-[56.25%] h-0">
+                <iframe
+                  src={`https://www.youtube.com/embed/${currentVideoLink.split('v=')[1].split('&')[0]}`}
+                  className="absolute top-0 left-0 w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Exercise Video"
+                ></iframe>
+              </div>
+              <div className="p-4 flex justify-end">
+                <button
+                  onClick={handleCloseVideo}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Header with animated gradient */}
         <div className="text-center mb-12">
           <div className="relative inline-block">
@@ -1130,7 +1410,18 @@ function ChatbotSuggestionPage() {
                           <Check className="h-5 w-5 text-white" />
                         </div>
                       )}
+                      
+                      {/* Video Play Button */}
+                      <button
+                        onClick={() => handleOpenVideo(suggestion.youtubeLink)}
+                        className="absolute bottom-3 left-3 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-all transform hover:scale-110"
+                        aria-label="Play video"
+                        title="Watch Video"
+                      >
+                        <Play className="h-5 w-5 fill-current" />
+                      </button>
                     </div>
+                    
 
                     <div className="p-4 relative">
                       {showAddAnimation === index && (
@@ -1417,4 +1708,3 @@ function ChatbotSuggestionPage() {
 }
 
 export default ChatbotSuggestionPage;
-
