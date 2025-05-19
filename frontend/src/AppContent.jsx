@@ -13,6 +13,7 @@ import PrivateRoute from "./PrivateRoute";
 // User Dashboard Pages
 import BreathingExercise from "./UserDashboardPages/BreathingExercise";
 import GuidedMeditation from "./UserDashboardPages/GuidedMeditation";
+import MeditationDetail from "./UserDashboardPages/MeditationDetail"; 
 import CopingStrategies from "./UserDashboardPages/CopingStrategies";
 import ChatbotSuggestionPage from "./UserDashboardPages/ChatbotSuggestionPage";
 
@@ -28,6 +29,7 @@ const AppContent = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
 
+      {/* Protected routes */}
       <Route
         path="/dashboard/*"
         element={
@@ -37,12 +39,52 @@ const AppContent = () => {
         }
       />
 
-      <Route path="/breathing-exercise" element={<BreathingExercise />} />
-      <Route path="/guided-meditation" element={<GuidedMeditation />} />
-      <Route path="/coping-strategies" element={<CopingStrategies />} />
-      <Route path="/chatbot-suggestions" element={<ChatbotSuggestionPage userId={user?._id} />} />
+      <Route 
+        path="/breathing-exercise" 
+        element={
+          <PrivateRoute>
+            <BreathingExercise />
+          </PrivateRoute>
+        } 
+      />
+      
+      <Route 
+        path="/guided-meditation" 
+        element={
+          <PrivateRoute>
+            <GuidedMeditation />
+          </PrivateRoute>
+        } 
+      />
 
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route 
+        path="/guided-meditation/:id" 
+        element={
+          <PrivateRoute>
+            <MeditationDetail />
+          </PrivateRoute>
+        } 
+      />
+
+      <Route 
+        path="/coping-strategies" 
+        element={
+          <PrivateRoute>
+            <CopingStrategies />
+          </PrivateRoute>
+        } 
+      />
+
+      <Route 
+        path="/chatbot-suggestions" 
+        element={
+          <PrivateRoute>
+            <ChatbotSuggestionPage userId={user?._id} />
+          </PrivateRoute>
+        } 
+      />
+
+      <Route path="*" element={<Navigate to="/dashboard/*" />} />
     </Routes>
   );
 };
