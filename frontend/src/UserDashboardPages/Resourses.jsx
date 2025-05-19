@@ -1,871 +1,841 @@
-import React, { useState, useEffect } from "react";
-import { Box, Typography, Card, CardContent, CardActionArea, CardMedia, Grid, Button, Link, IconButton, Dialog, DialogContent, DialogTitle, Chip, Divider } from "@mui/material";
-import ArticleIcon from "@mui/icons-material/Article";
-import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
-import MenuBookIcon from "@mui/icons-material/MenuBook";
-import MicIcon from "@mui/icons-material/Mic";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import ImageIcon from "@mui/icons-material/Image";
-import CalculateIcon from "@mui/icons-material/Calculate";
-import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
-import DownloadIcon from "@mui/icons-material/Download";
-import CloseIcon from "@mui/icons-material/Close";
-import { motion } from "framer-motion";
+import React, { useEffect, useState, useMemo } from "react";
+import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  FaExclamationCircle, FaExclamationTriangle, FaCheckCircle, 
+  FaChartLine, FaHistory, FaBell, FaFilter, FaSearch, 
+  FaUserFriends, FaCog, FaFileExport, FaComment, FaChartBar 
+} from "react-icons/fa";
+import { Line, Bar } from "react-chartjs-2";
+import { Chart, registerables } from "chart.js";
+Chart.register(...registerables);
 
-const YOUTUBE_API_KEY = "AIzaSyDzY3usd4TBfcJMlV9jQT3wjAQB7wNYRL0";
-const NEWSAPI_KEY = "1bdf8787bffa4420bb8c1b477d2490ca";
-
-const Resources = () => {
-  const [articles, setArticles] = useState([]);
-  const [videos, setVideos] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedResource, setSelectedResource] = useState(null);
-
-  const fetchResources = () => {
-    fetch(
-      `https://newsapi.org/v2/everything?q=mental+health&language=en&sortBy=publishedAt&apiKey=${NEWSAPI_KEY}`
-    )
-      .then((res) => res.json())
-      .then((data) => setArticles(data.articles || []))
-      .catch((err) => console.error("Error fetching news articles:", err));
-
-    fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=mental+health&type=video&maxResults=8&key=${YOUTUBE_API_KEY}`
-    )
-      .then((res) => res.json())
-      .then((data) => setVideos(data.items || []))
-      .catch((err) => console.error("Error fetching YouTube videos:", err));
-  };
+const RiskAnalysis = () => {
+  const [alerts, setAlerts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    riskLevels: ["High", "Moderate", "Low"],
+    dateRange: [null, null],
+    searchQuery: "",
+  });
+  const [userPreferences, setUserPreferences] = useState({
+    darkMode: false,
+    alertThreshold: 70,
+    layout: "standard",
+  });
+  const [newComment, setNewComment] = useState("");
+  const [activeAlertId, setActiveAlertId] = useState(null);
 
   useEffect(() => {
-    fetchResources();
-    const interval = setInterval(fetchResources, 600000); // Refresh every 10 minutes
-    return () => clearInterval(interval);
+    const token = localStorage.getItem("token");
+
+    const fetchAlerts = async () => {
+      try {
+        const res = await axios.get("http://localhost:4000/api/chatbot/risk-alerts", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setAlerts(res.data.alerts.map(alert => ({
+          ...alert,
+          riskScore: calculateRiskScore(alert.riskLevel),
+          comments: [],
+          acknowledged: false
+        })) || []);
+      } catch (err) {
+        console.error("Error fetching alerts:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAlerts();
   }, []);
 
-  const guides = [
-    {
-      title: "How to Start a Fitness Routine",
-      description: "Step-by-step guide to building a sustainable fitness habit",
-      type: "guide",
-      download: "https://resources.finalsite.net/images/v1647292567/davisk12utus/scngtoh9ngtpcjzusovv/StartinganExerciseRoutine_4StepGuide.pdf"
-    },
-    {
-      title: "Dealing with Anxiety",
-      description: "Practical strategies for managing anxiety in daily life",
-      type: "guide",
-      download: "https://www.mcgill.ca/counselling/files/counselling/anxiety_moodjuice_self_help_guide.pdf"
-    },
-    {
-      title: "Mindfulness Techniques",
-      description: "Illustrated walkthrough of mindfulness exercises",
-      type: "guide",
-      download: "https://uploads-ssl.webflow.com/60e4eec45f2723b891728a20/6131173e4809a81b3e21ccfd_73-mindfulness-exercises.pdf"
+  const calculateRiskScore = (riskLevel) => {
+    switch(riskLevel) {
+      case "High": return Math.floor(Math.random() * 30) + 70; // 70-100
+      case "Moderate": return Math.floor(Math.random() * 30) + 40; // 40-69
+      case "Low": return Math.floor(Math.random() * 39) + 1; // 1-39
+      default: return 0;
     }
-  ];
-
-  const podcasts = [
-    {
-      title: "Daily Wellness Podcast",
-      description: "10-minute daily tips for mental and physical health",
-      link: "https://podcasts.apple.com/us/podcast/daily-wellness-podcast/id1651051841"
-    },
-    {
-      title: "Guided Meditation Series",
-      description: "20-minute guided meditations for stress relief",
-      link: "https://www.youtube.com/watch?v=MIr3RsUWrdo"
-    },
-    {
-      title: "Fitness Audio Coaching",
-      description: "Audio instructions for home workouts",
-      link: "https://obefitness.com/blog/audio-workout-types"
-    }
-  ];
-
-  const ebooks = [
-    {
-      title: "30-Day Workout Plan",
-      description: "Complete month-long fitness program",
-      download: "https://darebee.com/pdf/programs/30-days-of-change.pdf"
-    },
-    {
-      title: "Mindfulness Journal",
-      description: "Daily prompts for reflection and growth",
-      download: "https://youthrex.com/wp-content/uploads/2020/04/7-Day-Mindfulness-Journal.pdf"
-    },
-    {
-      title: "Nutrition Tracking Templates",
-      description: "Printable meal planning sheets",
-      download: "https://www.cdc.gov/healthyweight/pdf/food_diary_cdc.pdf"
-    }
-  ];
-
-  const planners = [
-    {
-      title: "Workout Schedule",
-      description: "Personalized weekly exercise planner",
-      download: "https://www.printabulls.com/wp-content/uploads/2022/12/Printable-Goal-Planner-Pages-1-Full-Size.pdf"
-    },
-    {
-      title: "Goal-Setting Planner",
-      description: "Daily/weekly goal tracking sheets",
-      download: "https://www.lssu.edu/wp-content/uploads/2021/09/SMART-Goals-Worksheet-1.pdf"
-    },
-    {
-      title: "Wellness Reminders",
-      description: "Hydration, stretching, mindfulness alerts",
-      download: "https://ie.pinterest.com/pin/840202874225756503/"
-    }
-  ];
-
-  const infographics = [
-    {
-      title: "Nutrition Guide",
-      description: "Visual guide to balanced eating",
-      image: "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExd280NmRrZnMzZGhkZXNsc3hiczZzZHU1cDljeWpiNXc0ajA3ZXR0ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ElL0NsFdtSMETMRtGV/giphy.gif"
-    },
-    {
-      title: "Exercise Postures",
-      description: "Proper form for common exercises",
-      image: "https://images.pexels.com/photos/841130/pexels-photo-841130.jpeg"
-    },
-    {
-      title: "Coping Strategies",
-      description: "Mind map of emotional triggers and responses",
-      image: "https://images.pexels.com/photos/4101143/pexels-photo-4101143.jpeg"
-    }
-  ];
-
-  const tools = [
-    {
-      title: "BMI Calculator",
-      description: "Calculate your Body Mass Index",
-      link: "https://www.calculator.net/bmi-calculator.html"
-    },
-    {
-      title: "Calorie Calculator",
-      description: "Determine your daily calorie needs",
-      link: "https://www.calculator.net/calorie-calculator.html"
-    },
-    {
-      title: "Sleep Score Tool",
-      description: "Assess your sleep quality",
-      link: "https://www.sleepfoundation.org/sleep-calculator"
-    }
-  ];
-
-  const exerciseDemos = [
-    {
-      title: "Yoga Flow",
-      description: "Step-by-step animated guide",
-      gif: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmxwMm9ueG02NjlrMWd5aXc0eTVqc2sxbWQ1NDd1cjl0a2U3eHN5YSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/fVE8soBAWSgqjoC1kS/giphy.gif"
-    },
-    {
-      title: "Proper Squat Form",
-      description: "Animated demonstration",
-      gif: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHY3MWxjcDdxMDBxZHR5aTF1azhwbm5vaHNjb2dnMHYxazRuNmlhMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MdRI2tmI5e7HX7P76U/giphy.gif"
-    },
-    {
-      title: "Stretching Routine",
-      description: "Daily mobility exercises",
-      gif: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjMyZXA0cTU1NDlvamhiZzdyN2tteHZjbWgyZ2JvMjUwNGpleGs0ZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gsrnofq3K6WuETu/giphy.gif"
-    }
-  ];
-
-  const downloads = [
-    {
-      title: "Positive Affirmations",
-      description: "Desktop wallpapers with motivational quotes",
-      download: "https://www.etsy.com/listing/1748491810/motivational-affirmations-desktop"
-    },
-    {
-      title: "Habit Tracker",
-      description: "Printable monthly habit tracker",
-      download: "https://worldofprintables.com/habit-tracker-pdf/"
-    },
-    {
-      title: "Motivational Posters",
-      description: "Printable inspirational posters",
-      download: "https://www.postermywall.com/index.php/l/motivational-posters"
-    }
-  ];
-
-  const handleResourceClick = (resource) => {
-    setSelectedResource(resource);
-    setOpenDialog(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
+  const filteredAlerts = useMemo(() => {
+    return alerts.filter(alert => {
+      // Risk Level Filter
+      if (!filters.riskLevels.includes(alert.riskLevel)) return false;
+      
+      // Date Range Filter
+      const alertDate = new Date(alert.createdAt);
+      if (filters.dateRange[0] && alertDate < filters.dateRange[0]) return false;
+      if (filters.dateRange[1] && alertDate > filters.dateRange[1]) return false;
+      
+      // Search Query Filter
+      if (filters.searchQuery && 
+          !alert.recommendation.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [alerts, filters]);
+
+  const recentHighRisk = filteredAlerts.filter((a) => a.riskLevel === "High").slice(-3).reverse();
+
+  const handleAddComment = (alertId) => {
+    if (!newComment.trim()) return;
+    
+    setAlerts(prev => prev.map(alert => 
+      alert.id === alertId 
+        ? { ...alert, comments: [...alert.comments, { 
+            text: newComment, 
+            timestamp: new Date().toISOString(),
+            user: "Current User"
+          }]}
+        : alert
+    ));
+    setNewComment("");
+    setActiveAlertId(null);
   };
 
-  const renderResourceCard = (resource, icon, color) => (
-    <Grid item xs={12} sm={6} md={4} key={resource.title}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        whileHover={{ scale: 1.03 }}
-      >
-        <Card
-          sx={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            borderRadius: "12px",
-            boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-            transition: "all 0.3s ease",
-            background: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(5px)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            "&:hover": {
-              boxShadow: `0 12px 24px ${color}40`,
-            },
-          }}
-        >
-          <CardActionArea 
-            onClick={() => handleResourceClick(resource)}
-            sx={{
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-start',
-              alignItems: 'flex-start',
-              p: 2
-            }}
-          >
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              mb: 2,
-              width: '100%',
-              justifyContent: 'space-between'
-            }}>
-              <Box sx={{ 
-                backgroundColor: `${color}20`,
-                borderRadius: '50%',
-                width: 40,
-                height: 40,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                {React.cloneElement(icon, { sx: { color, fontSize: 20 } })}
-              </Box>
-              <Chip 
-                label={resource.download ? "PDF" : resource.link ? "Link" : "Resource"} 
-                size="small" 
-                sx={{ 
-                  backgroundColor: `${color}20`, 
-                  color: color,
-                  fontWeight: 600
-                }} 
-              />
-            </Box>
-            
-            <Typography
-              gutterBottom
-              variant="h6"
-              fontWeight="600"
-              sx={{ 
-                color: "#2C3E50", 
-                fontSize: "1.1rem",
-                lineHeight: 1.3,
-                mb: 1
-              }}
-            >
-              {resource.title}
-            </Typography>
-            
-            <Typography 
-              variant="body2" 
-              color="text.secondary" 
-              sx={{ 
-                fontSize: "0.875rem",
-                mb: 2,
-                flexGrow: 1
-              }}
-            >
-              {resource.description}
-            </Typography>
-            
-            <Button
-              variant="contained"
-              size="small"
-              sx={{
-                width: '100%',
-                borderRadius: "8px",
-                fontWeight: "600",
-                textTransform: "none",
-                backgroundColor: color,
-                "&:hover": {
-                  backgroundColor: color,
-                  opacity: 0.9,
-                  boxShadow: `0 4px 12px ${color}80`
-                },
-              }}
-            >
-              {resource.download ? "Download" : resource.link ? "View" : "Open"}
-            </Button>
-          </CardActionArea>
-        </Card>
-      </motion.div>
-    </Grid>
-  );
+  const handleAcknowledge = (alertId) => {
+    setAlerts(prev => prev.map(alert => 
+      alert.id === alertId ? { ...alert, acknowledged: true } : alert
+    ));
+  };
 
-  const SectionHeader = ({ icon, title, subtitle }) => (
-    <Box sx={{ 
-      textAlign: 'center', 
-      mb: 4,
-      maxWidth: '800px',
-      mx: 'auto'
-    }}>
-      <Box sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: '50%',
-        width: 60,
-        height: 60,
-        mb: 2
-      }}>
-        {React.cloneElement(icon, { 
-          sx: { 
-            color: 'white', 
-            fontSize: 30 
-          } 
-        })}
-      </Box>
-      <Typography
-        variant="h4"
-        fontWeight="700"
-        sx={{
-          color: "white",
-          fontSize: "1.8rem",
-          letterSpacing: "0.5px",
-          mb: 1
-        }}
-      >
-        {title}
-      </Typography>
-      {subtitle && (
-        <Typography
-          variant="body1"
-          sx={{
-            color: "rgba(255, 255, 255, 0.8)",
-            fontSize: "1rem",
-            maxWidth: '600px',
-            mx: 'auto'
-          }}
-        >
-          {subtitle}
-        </Typography>
-      )}
-    </Box>
-  );
+  // Chart Data
+  const chartData = {
+    labels: filteredAlerts.map((a) => new Date(a.createdAt).toLocaleDateString()),
+    datasets: [
+      {
+        label: "Risk Level Trend",
+        data: filteredAlerts.map((a) => (a.riskLevel === "High" ? 3 : a.riskLevel === "Moderate" ? 2 : 1)),
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        borderWidth: 2,
+        pointBackgroundColor: (context) => {
+          const value = context.dataset.data[context.dataIndex];
+          return value === 3 ? "#ef4444" : value === 2 ? "#f59e0b" : "#10b981";
+        },
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.3,
+      },
+    ],
+  };
+
+  const analyticsData = {
+    labels: ["High", "Moderate", "Low"],
+    datasets: [{
+      label: 'Alerts by Risk Level',
+      data: [
+        filteredAlerts.filter(a => a.riskLevel === "High").length,
+        filteredAlerts.filter(a => a.riskLevel === "Moderate").length,
+        filteredAlerts.filter(a => a.riskLevel === "Low").length
+      ],
+      backgroundColor: [
+        'rgba(239, 68, 68, 0.7)',
+        'rgba(245, 158, 11, 0.7)',
+        'rgba(16, 185, 129, 0.7)'
+      ],
+      borderColor: [
+        'rgba(239, 68, 68, 1)',
+        'rgba(245, 158, 11, 1)',
+        'rgba(16, 185, 129, 1)'
+      ],
+      borderWidth: 1
+    }]
+  };
+
+  const riskLabels = {
+    1: "Low",
+    2: "Moderate",
+    3: "High",
+  };
+
+  const getRiskColor = (riskLevel) => {
+    return riskLevel === "High" ? "red" : riskLevel === "Moderate" ? "yellow" : "green";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#297194] via-[#D1E1F7] to-[#E7F2F7]">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full"
+        />
+      </div>
+    );
+  }
 
   return (
-    <Box
-      sx={{
-        p: { xs: 3, md: 5 },
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom, #297194, #D1E1F7, #E7F2F7)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 6,
-        fontFamily: "'Poppins', sans-serif",
-      }}
-    >
-      {/* Hero Section */}
-      <Box sx={{ 
-        textAlign: 'center', 
-        mt: { xs: 2, md: 4 },
-        mb: 4,
-        maxWidth: '800px'
-      }}>
-        <Typography
-          variant="h1"
-          fontWeight="800"
-          sx={{
-            mb: 3,
-            color: "white",
-            fontSize: { xs: "2.2rem", md: "3rem" },
-            letterSpacing: "0.5px",
-            lineHeight: 1.2,
-            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}
-        >
-          Discover Wellness Resources
-        </Typography>
-        <Typography
-          variant="h5"
-          sx={{
-            color: "rgba(255, 255, 255, 0.9)",
-            fontSize: { xs: "1rem", md: "1.2rem" },
-            fontWeight: 400,
-            mb: 3
-          }}
-        >
-          Curated collection of tools, guides, and materials to support your mental and physical health journey
-        </Typography>
-        <Box sx={{ 
-          display: 'flex', 
-          gap: 2, 
-          justifyContent: 'center',
-          flexWrap: 'wrap'
-        }}>
-          <Chip label="Mental Health" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-          <Chip label="Fitness Guides" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-          <Chip label="Wellness Tools" sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-        </Box>
-      </Box>
-
-      {/* Articles and Guides Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<MenuBookIcon />} 
-          title="Articles and Guides" 
-          subtitle="Expert-written resources to help you on your wellness journey"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {guides.map((guide) => renderResourceCard(guide, <MenuBookIcon />, "#4CAF50"))}
-        </Grid>
-      </Box>
-
-      {/* News Articles Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<ArticleIcon />} 
-          title="Latest Mental Health News" 
-          subtitle="Stay updated with the latest research and developments"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {articles.slice(0, 3).map((article, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                whileHover={{ scale: 1.03 }}
-              >
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: "12px",
-                    boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                    transition: "all 0.3s ease",
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    backdropFilter: 'blur(5px)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    "&:hover": {
-                      boxShadow: "0 12px 24px rgba(30, 136, 229, 0.2)",
-                    },
-                  }}
-                >
-                  <CardActionArea
-                    component="a"
-                    href={article.url}
-                    target="_blank"
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-start',
-                      alignItems: 'flex-start'
-                    }}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="180"
-                      image={article.urlToImage || "https://via.placeholder.com/300"}
-                      alt="News Thumbnail"
-                      sx={{
-                        borderTopLeftRadius: "12px",
-                        borderTopRightRadius: "12px",
-                        objectFit: "cover",
-                      }}
-                    />
-                    <CardContent sx={{ p: 3, flexGrow: 1 }}>
-                      <Chip 
-                        label="News" 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: "rgba(30, 136, 229, 0.1)", 
-                          color: "#1E88E5",
-                          fontWeight: 600,
-                          mb: 1.5
-                        }} 
-                      />
-                      <Typography
-                        gutterBottom
-                        variant="h6"
-                        fontWeight="600"
-                        sx={{ 
-                          color: "#2C3E50", 
-                          fontSize: "1.1rem",
-                          lineHeight: 1.3,
-                          mb: 1
-                        }}
-                      >
-                        {article.title}
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary" 
-                        sx={{ 
-                          fontSize: "0.875rem",
-                          mb: 2
-                        }}
-                      >
-                        {article.source?.name || "Unknown source"}
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        sx={{
-                          width: '100%',
-                          borderRadius: "8px",
-                          fontWeight: "600",
-                          textTransform: "none",
-                          backgroundColor: "#1E88E5",
-                          "&:hover": {
-                            backgroundColor: "#1565C0",
-                            boxShadow: "0 4px 12px rgba(30, 136, 229, 0.4)"
-                          },
-                        }}
-                        href={article.url}
-                        target="_blank"
-                      >
-                        Read Article
-                      </Button>
-                    </CardContent>
-                  </CardActionArea>
-                </Card>
-              </motion.div>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-
-      {/* Podcasts Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<MicIcon />} 
-          title="Podcasts & Audio Sessions" 
-          subtitle="Listen and learn from wellness experts on the go"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {podcasts.map((podcast) => renderResourceCard(podcast, <MicIcon />, "#9C27B0"))}
-        </Grid>
-      </Box>
-
-      {/* E-books Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<MenuBookIcon />} 
-          title="E-books & PDFs" 
-          subtitle="Downloadable resources for deeper learning"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {ebooks.map((ebook) => renderResourceCard(ebook, <MenuBookIcon />, "#FF9800"))}
-        </Grid>
-      </Box>
-
-      {/* Planners Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<CalendarTodayIcon />} 
-          title="Interactive Planners" 
-          subtitle="Tools to help you organize your wellness journey"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {planners.map((planner) => renderResourceCard(planner, <CalendarTodayIcon />, "#2196F3"))}
-        </Grid>
-      </Box>
-
-      {/* Infographics Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<ImageIcon />} 
-          title="Infographics & Visual Aids" 
-          subtitle="Visual resources for quick learning"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {infographics.map((infographic) => renderResourceCard(infographic, <ImageIcon />, "#00BCD4"))}
-        </Grid>
-      </Box>
-
-      {/* Tools Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<CalculateIcon />} 
-          title="Tools & Calculators" 
-          subtitle="Interactive tools to track your progress"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {tools.map((tool) => renderResourceCard(tool, <CalculateIcon />, "#607D8B"))}
-        </Grid>
-      </Box>
-
-      {/* Exercise Demos Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<FitnessCenterIcon />} 
-          title="Exercise Demos" 
-          subtitle="Visual guides for proper form and technique"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {exerciseDemos.map((demo) => renderResourceCard(demo, <FitnessCenterIcon />, "#F44336"))}
-        </Grid>
-      </Box>
-
-      {/* Downloads Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<DownloadIcon />} 
-          title="Downloadable Resources" 
-          subtitle="Printables and materials for offline use"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {downloads.map((download) => renderResourceCard(download, <DownloadIcon />, "#795548"))}
-        </Grid>
-      </Box>
-
-      {/* YouTube Videos Section */}
-      <Box sx={{ width: '100%', maxWidth: '1400px' }}>
-        <SectionHeader 
-          icon={<PlayCircleOutlineIcon />} 
-          title="Mental Health Videos" 
-          subtitle="Engaging video content from trusted sources"
-        />
-        <Grid container spacing={3} justifyContent="center">
-          {videos.slice(0, 3).map((video, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                whileHover={{ scale: 1.03 }}
-              >
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: "12px",
-                    boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                    transition: "all 0.3s ease",
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    backdropFilter: 'blur(5px)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    "&:hover": {
-                      boxShadow: "0 12px 24px rgba(211, 47, 47, 0.2)",
-                    },
-                  }}
-                >
-                  <CardActionArea
-                    component="a"
-                    href={`https://www.youtube.com/watch?v=${video.id.videoId}`}
-                    target="_blank"
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-start',
-                      alignItems: 'flex-start'
-                    }}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="180"
-                      image={video.snippet.thumbnails.high.url}
-                      alt="Video Thumbnail"
-                      sx={{
-                        borderTopLeftRadius: "12px",
-                        borderTopRightRadius: "12px",
-                        objectFit: "cover",
-                      }}
-                    />
-                    <CardContent sx={{ p: 3, flexGrow: 1 }}>
-                      <Chip 
-                        label="Video" 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: "rgba(211, 47, 47, 0.1)", 
-                          color: "#D32F2F",
-                          fontWeight: 600,
-                          mb: 1.5
-                        }} 
-                      />
-                      <Typography
-                        gutterBottom
-                        variant="h6"
-                        fontWeight="600"
-                        sx={{ 
-                          color: "#2C3E50", 
-                          fontSize: "1.1rem",
-                          lineHeight: 1.3,
-                          mb: 1
-                        }}
-                      >
-                        {video.snippet.title}
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        color="text.secondary" 
-                        sx={{ 
-                          fontSize: "0.875rem",
-                          mb: 2
-                        }}
-                      >
-                        {video.snippet.channelTitle}
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        sx={{
-                          width: '100%',
-                          borderRadius: "8px",
-                          fontWeight: "600",
-                          textTransform: "none",
-                          backgroundColor: "#D32F2F",
-                          "&:hover": {
-                            backgroundColor: "#B71C1C",
-                            boxShadow: "0 4px 12px rgba(211, 47, 47, 0.4)"
-                          },
-                        }}
-                        href={`https://www.youtube.com/watch?v=${video.id.videoId}`}
-                        target="_blank"
-                      >
-                        Watch Now
-                      </Button>
-                    </CardContent>
-                  </CardActionArea>
-                </Card>
-              </motion.div>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-
-      {/* Resource Dialog */}
-      <Dialog 
-        open={openDialog} 
-        onClose={handleCloseDialog} 
-        maxWidth="md" 
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: '16px',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)'
-          }
-        }}
+    <div className={`min-h-screen bg-gradient-to-b from-[#297194] via-[#D1E1F7] to-[#E7F2F7] text-gray-800 p-4 md:p-6 ${userPreferences.darkMode ? 'dark' : ''}`}>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-6xl mx-auto"
       >
-        <DialogTitle sx={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center",
-          borderBottom: '1px solid rgba(0,0,0,0.1)',
-          pb: 2
-        }}>
-          <Typography variant="h5" fontWeight="600">
-            {selectedResource?.title}
-          </Typography>
-          <IconButton 
-            onClick={handleCloseDialog}
-            sx={{
-              '&:hover': {
-                backgroundColor: 'rgba(0,0,0,0.05)'
-              }
-            }}
+        {/* Header with Search and Filter */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <motion.h2
+            className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 via-blue-400 to-indigo-500 drop-shadow tracking-tight"
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
           >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: 4 }}>
-          {selectedResource?.image && (
-            <Box sx={{ 
-              mb: 3,
-              borderRadius: '12px',
-              overflow: 'hidden',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-            }}>
-              <img 
-                src={selectedResource.image} 
-                alt={selectedResource.title} 
-                style={{ width: "100%", display: 'block' }} 
+            Risk Analysis Dashboard
+          </motion.h2>
+          
+          <div className="flex gap-2 w-full md:w-auto">
+            <div className="relative flex-1">
+              <FaSearch className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search alerts..."
+                className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={filters.searchQuery}
+                onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
               />
-            </Box>
-          )}
-          {selectedResource?.gif && (
-            <Box sx={{ 
-              mb: 3,
-              borderRadius: '12px',
-              overflow: 'hidden',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-            }}>
-              <img 
-                src={selectedResource.gif} 
-                alt={selectedResource.title} 
-                style={{ width: "100%", display: 'block' }} 
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="bg-white/90 hover:bg-white px-4 py-2 rounded-lg border border-gray-300 flex items-center gap-2"
+            >
+              <FaFilter /> Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Filter Panel */}
+        {/* Filter Panel */}
+<AnimatePresence>
+  {showFilters && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-4 mb-6 overflow-hidden"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Risk Level Filter */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Risk Level</label>
+          <div className="space-y-2">
+            {["High", "Moderate", "Low"].map(level => (
+              <label key={level} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={filters.riskLevels.includes(level)}
+                  onChange={() => {
+                    const newLevels = filters.riskLevels.includes(level)
+                      ? filters.riskLevels.filter(l => l !== level)
+                      : [...filters.riskLevels, level];
+                    setFilters({...filters, riskLevels: newLevels});
+                  }}
+                  className="rounded text-blue-600"
+                />
+                <span>{level} Risk</span>
+              </label>
+            ))}
+          </div>
+        </div>
+        
+        {/* Fixed Date Range Picker */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Date Range</label>
+                  <div className="flex flex-col space-y-2">
+                    <input
+                      type="date"
+                      onChange={(e) => setFilters(prev => ({
+                        ...prev, 
+                        dateRange: [e.target.value ? new Date(e.target.value) : null, prev.dateRange[1]]
+                      }))}
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Start Date"
+                    />
+                    <input
+                      type="date"
+                      onChange={(e) => setFilters(prev => ({
+                        ...prev, 
+                        dateRange: [prev.dateRange[0], e.target.value ? new Date(e.target.value) : null]
+                      }))}
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="End Date"
+                    />
+                  </div>
+                </div>
+        
+        {/* Reset Button */}
+        <div className="flex items-end">
+          <button
+            onClick={() => setFilters({
+              riskLevels: ["High", "Moderate", "Low"],
+              dateRange: [null, null],
+              searchQuery: ""
+            })}
+            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors"
+          >
+            Reset Filters
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+        {/* Navigation Tabs */}
+        <motion.div className="flex mb-6 md:mb-10 overflow-x-auto">
+          {["overview", "trends", "history", "analytics"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 font-medium rounded-t-lg transition-all duration-300 flex items-center gap-2 ${
+                activeTab === tab
+                  ? "bg-white text-blue-600 shadow-md"
+                  : "bg-white/50 text-gray-600 hover:bg-white/70"
+              }`}
+            >
+              {tab === "overview" && <FaChartLine />}
+              {tab === "trends" && <FaChartLine />}
+              {tab === "history" && <FaHistory />}
+              {tab === "analytics" && <FaChartBar />}
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </motion.div>
+
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Risk Summary Card */}
+            <motion.div
+              className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+              whileHover={{ y: -5 }}
+            >
+              <h3 className="text-xl font-semibold mb-4 text-blue-800">Risk Summary</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Total Alerts:</span>
+                  <span className="font-bold">{filteredAlerts.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">High Risk:</span>
+                  <span className="font-bold text-red-600">
+                    {filteredAlerts.filter(a => a.riskLevel === "High").length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Moderate Risk:</span>
+                  <span className="font-bold text-yellow-600">
+                    {filteredAlerts.filter(a => a.riskLevel === "Moderate").length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Low Risk:</span>
+                  <span className="font-bold text-green-600">
+                    {filteredAlerts.filter(a => a.riskLevel === "Low").length}
+                  </span>
+                </div>
+                
+                {/* Risk Score Meter */}
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium mb-2">Overall Risk Score</h4>
+                  <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 h-4 rounded-full" 
+                      style={{ 
+                        width: `${Math.min(
+                          filteredAlerts.reduce((sum, a) => sum + a.riskScore, 0) / 
+                          Math.max(filteredAlerts.length, 1),
+        )}%` 
+                      }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>0</span>
+                    <span>50</span>
+                    <span>100</span>
+                  </div>
+                  <div className="text-center mt-2">
+                    <span className="font-bold">
+                      {filteredAlerts.length > 0 
+                        ? Math.round(filteredAlerts.reduce((sum, a) => sum + a.riskScore, 0) / filteredAlerts.length)
+                        : 0}
+                    </span> Current Average Risk Score
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Recent High-Risk Alerts */}
+            <motion.div
+              className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+              whileHover={{ y: -5 }}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-red-600 flex items-center gap-2">
+                  <FaExclamationCircle className="text-2xl" />
+                  Recent High-Risk Alerts
+                </h3>
+                <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                  Threshold: {userPreferences.alertThreshold}+
+                </span>
+              </div>
+              {recentHighRisk.length > 0 ? (
+                <ul className="space-y-3">
+                  {recentHighRisk.map((a, i) => (
+                    <motion.li
+                      key={i}
+                      className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm hover:shadow-md transition"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-sm text-gray-500 mb-1">
+                            {new Date(a.createdAt).toLocaleString()}
+                          </p>
+                          <p className="font-medium">{a.recommendation}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-red-600">{a.riskScore}</span>
+                          <span className="block text-xs text-gray-500">Risk Score</span>
+                        </div>
+                      </div>
+                      
+                      {/* Collaboration Features */}
+                      <div className="mt-2 flex justify-between items-center">
+                        <button 
+                          onClick={() => setActiveAlertId(activeAlertId === a.id ? null : a.id)}
+                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <FaComment /> {a.comments.length} Comments
+                        </button>
+                        {!a.acknowledged && (
+                          <button 
+                            onClick={() => handleAcknowledge(a.id)}
+                            className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200"
+                          >
+                            Acknowledge
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Comment Section */}
+                      {activeAlertId === a.id && (
+                        <div className="mt-3">
+                          <div className="max-h-40 overflow-y-auto mb-2 space-y-2">
+                            {a.comments.length > 0 ? (
+                              a.comments.map((comment, idx) => (
+                                <div key={idx} className="bg-white p-2 rounded border text-sm">
+                                  <p className="font-medium">{comment.user}</p>
+                                  <p>{comment.text}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(comment.timestamp).toLocaleString()}
+                                  </p>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-gray-500">No comments yet</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={newComment}
+                              onChange={(e) => setNewComment(e.target.value)}
+                              placeholder="Add a comment..."
+                              className="flex-1 text-sm p-2 border rounded"
+                            />
+                            <button
+                              onClick={() => handleAddComment(a.id)}
+                              className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+                            >
+                              Post
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </motion.li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                  <p className="text-gray-600 flex items-center gap-2">
+                    <FaCheckCircle className="text-green-500" />
+                    No recent high-risk alerts detected.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Trends Tab */}
+        {activeTab === "trends" && (
+          <motion.div
+            className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 mb-6 hover:shadow-xl transition-shadow"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            whileHover={{ y: -5 }}
+          >
+            <h3 className="text-xl font-semibold mb-4 text-blue-800 flex items-center gap-2">
+              <FaChartLine className="text-2xl" />
+              Risk Level Trend Analysis
+            </h3>
+            <div className="h-64 md:h-80">
+              <Line
+                data={chartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      ticks: {
+                        callback: (value) => riskLabels[value] || "",
+                        stepSize: 1,
+                      },
+                      min: 1,
+                      max: 3,
+                    },
+                  },
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: (context) => {
+                          const value = context.raw;
+                          return `Risk Level: ${riskLabels[value]}`;
+                        },
+                      },
+                    },
+                  },
+                }}
               />
-            </Box>
-          )}
-          <Typography variant="body1" sx={{ 
-            mb: 3,
-            fontSize: '1.05rem',
-            lineHeight: 1.6,
-            color: 'rgba(0,0,0,0.8)'
-          }}>
-            {selectedResource?.description}
-          </Typography>
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 2,
-            flexWrap: 'wrap'
-          }}>
-            {selectedResource?.download && (
-              <Button
-                variant="contained"
-                startIcon={<DownloadIcon />}
-                href={selectedResource.download}
-                download
-                sx={{ 
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  px: 3,
-                  py: 1
-                }}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-4">
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
+                <span>High Risk</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                <span>Moderate Risk</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+                <span>Low Risk</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* History Tab */}
+        {activeTab === "history" && (
+          <motion.div
+            className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            whileHover={{ y: -5 }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-indigo-700 flex items-center gap-2">
+                <FaHistory className="text-2xl" />
+                Alert History Timeline
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                  Showing {filteredAlerts.length} alerts
+                </span>
+                <button className="text-blue-600 hover:text-blue-800">
+                  <FaFileExport />
+                </button>
+              </div>
+            </div>
+            <div className="space-y-4">
+              {filteredAlerts.length > 0 ? (
+                [...filteredAlerts].reverse().map((a, i) => (
+                  <motion.div
+                    key={i}
+                    className={`p-4 rounded-xl shadow-sm hover:shadow-md transition border-l-4 border-${getRiskColor(a.riskLevel)}-500 bg-white`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    whileHover={{ scale: 1.01 }}
+                  >
+                    <div className="flex items-start gap-3">
+                      {a.riskLevel === "High" && (
+                        <FaExclamationCircle className="text-red-500 text-xl mt-1 flex-shrink-0" />
+                      )}
+                      {a.riskLevel === "Moderate" && (
+                        <FaExclamationTriangle className="text-yellow-500 text-xl mt-1 flex-shrink-0" />
+                      )}
+                      {a.riskLevel === "Low" && (
+                        <FaCheckCircle className="text-green-500 text-xl mt-1 flex-shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex justify-between">
+                          <p className="text-sm text-gray-500 mb-1">
+                            {new Date(a.createdAt).toLocaleString()}
+                          </p>
+                          <span className={`font-bold text-${getRiskColor(a.riskLevel)}-600`}>
+                            {a.riskScore} pts
+                          </span>
+                        </div>
+                        <p className="font-medium">
+                          <span className={`font-semibold text-${getRiskColor(a.riskLevel)}-600`}>
+                            {a.riskLevel} Risk
+                          </span>{" "}
+                          – <span className="text-gray-700">{a.recommendation}</span>
+                        </p>
+                        
+                        {/* Collaboration Features */}
+                        <div className="mt-2 flex justify-between items-center">
+                          <button 
+                            onClick={() => setActiveAlertId(activeAlertId === a.id ? null : a.id)}
+                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            <FaComment /> {a.comments.length} Comments
+                          </button>
+                          <div className="flex items-center gap-2">
+                            {a.acknowledged ? (
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                Acknowledged
+                              </span>
+                            ) : (
+                              <button 
+                                onClick={() => handleAcknowledge(a.id)}
+                                className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200"
+                              >
+                                Acknowledge
+                              </button>
+                            )}
+                            <button className="text-xs text-gray-600 hover:text-gray-800">
+                              <FaUserFriends />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {/* Comment Section */}
+                        {activeAlertId === a.id && (
+                          <div className="mt-3">
+                            <div className="max-h-40 overflow-y-auto mb-2 space-y-2">
+                              {a.comments.length > 0 ? (
+                                a.comments.map((comment, idx) => (
+                                  <div key={idx} className="bg-gray-50 p-2 rounded border text-sm">
+                                    <p className="font-medium">{comment.user}</p>
+                                    <p>{comment.text}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {new Date(comment.timestamp).toLocaleString()}
+                                    </p>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm text-gray-500">No comments yet</p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Add a comment..."
+                                className="flex-1 text-sm p-2 border rounded"
+                              />
+                              <button
+                                onClick={() => handleAddComment(a.id)}
+                                className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+                              >
+                                Post
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                  <p className="text-gray-600">No alerts match your filters.</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === "analytics" && (
+          <motion.div
+            className="space-y-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <motion.div
+                className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+                whileHover={{ y: -5 }}
               >
-                Download Resource
-              </Button>
-            )}
-            {selectedResource?.link && (
-              <Button
-                variant="contained"
-                color="primary"
-                href={selectedResource.link}
-                target="_blank"
-                sx={{ 
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  px: 3,
-                  py: 1
-                }}
+                <h3 className="text-xl font-semibold mb-4 text-blue-800">Alert Distribution</h3>
+                <div className="h-64">
+                  <Bar 
+                    data={analyticsData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          display: false
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </motion.div>
+              
+              <motion.div
+                className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+                whileHover={{ y: -5 }}
               >
-                Open Resource
-              </Button>
+                <h3 className="text-xl font-semibold mb-4 text-blue-800">Risk Score Distribution</h3>
+                <div className="h-64">
+                  <Line
+                    data={{
+                      labels: filteredAlerts.map((_, i) => `Alert ${i+1}`),
+                      datasets: [{
+                        label: 'Risk Score',
+                        data: filteredAlerts.map(a => a.riskScore),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true
+                      }]
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      scales: {
+                        y: {
+                          min: 0,
+                          max: 100
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </motion.div>
+            </div>
+            
+            <motion.div
+              className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+              whileHover={{ y: -5 }}
+            >
+              <h3 className="text-xl font-semibold mb-4 text-blue-800">Alert Frequency Over Time</h3>
+              <div className="h-64">
+                <Line
+                  data={{
+                    labels: Array.from(new Set(filteredAlerts.map(a => new Date(a.createdAt).toLocaleDateString()))),
+                    datasets: [{
+                      label: 'Alerts per Day',
+                      data: Object.values(filteredAlerts.reduce((acc, alert) => {
+                        const date = new Date(alert.createdAt).toLocaleDateString();
+                        acc[date] = (acc[date] || 0) + 1;
+                        return acc;
+                      }, {})),
+                      borderColor: '#8b5cf6',
+                      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                      fill: true
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false
+                  }}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Personalization Panel */}
+        <div className="fixed bottom-4 right-4">
+          <motion.div
+            className="bg-white/90 backdrop-blur-sm rounded-full shadow-lg p-3 cursor-pointer"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setUserPreferences({...userPreferences, darkMode: !userPreferences.darkMode})}
+          >
+            <FaCog className="text-2xl text-blue-600" />
+          </motion.div>
+          
+          <AnimatePresence>
+            {userPreferences.darkMode && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="absolute bottom-16 right-0 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-4 w-64"
+              >
+                <h4 className="font-medium mb-2">Dashboard Preferences</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="flex items-center justify-between">
+                      <span>Dark Mode</span>
+                      <input
+                        type="checkbox"
+                        checked={userPreferences.darkMode}
+                        onChange={() => setUserPreferences({...userPreferences, darkMode: !userPreferences.darkMode})}
+                        className="toggle"
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Alert Threshold</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={userPreferences.alertThreshold}
+                      onChange={(e) => setUserPreferences({...userPreferences, alertThreshold: e.target.value})}
+                      className="w-full"
+                    />
+                    <div className="text-xs text-gray-600 mt-1">
+                      Current: {userPreferences.alertThreshold}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Layout</label>
+                    <select
+                      value={userPreferences.layout}
+                      onChange={(e) => setUserPreferences({...userPreferences, layout: e.target.value})}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="standard">Standard</option>
+                      <option value="compact">Compact</option>
+                      <option value="detailed">Detailed</option>
+                    </select>
+                  </div>
+                </div>
+              </motion.div>
             )}
-          </Box>
-        </DialogContent>
-      </Dialog>
-    </Box>
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </div>
   );
 };
 
-export default Resources;
+export default RiskAnalysis;
