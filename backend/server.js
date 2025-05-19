@@ -17,7 +17,7 @@ const app = express();
 
 app.use(express.json());
 app.use(cors({
-  origin: "https://mind-guard-ai-exvg.vercel.app",
+  origin: "https://mind-guard-ai-rbme.vercel.app",
   credentials: true 
 }));
 
