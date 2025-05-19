@@ -1,9 +1,9 @@
-Flask==2.0.2
+Flask
 transformers
 torch
 numpy
-matplotlib==3.4.3
+matplotlib
 pymongo
-lime==0.2.0.1
+lime
 huggingface_hub
 tokenizers
