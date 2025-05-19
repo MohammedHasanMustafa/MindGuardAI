@@ -14,12 +14,14 @@ import {
 
 const WellnessOverview = () => {
   const [overviewData, setOverviewData] = useState({
-    sentiment: "",
+    sentiment: "Neutral",
     sentiment_confidence: 0,
-    disorder: "",
+    disorder: "None",
     disorder_confidence: 0,
-    risk: "",
-    recommendations: [],
+    risk: "No Risk",
+    recommendations: ["No recommendations available"],
+    isLoading: true,
+    error: null
   });
 
   const navigate = useNavigate();
@@ -33,15 +35,24 @@ const WellnessOverview = () => {
 
     const fetchData = async () => {
       try {
-        const response = await axios.get("https://mindguardaibackend.onrender.com/api/chatbot/results", {
+        const response = await axios.get("http://localhost:8000/api/chatbot/results", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        setOverviewData(response.data);
+        setOverviewData(prev => ({
+          ...response.data,
+          isLoading: false,
+          error: null
+        }));
       } catch (error) {
         console.error("Error fetching chatbot results:", error);
+        setOverviewData(prev => ({
+          ...prev,
+          isLoading: false,
+          error: "Failed to load wellness data"
+        }));
       }
     };
 
@@ -49,31 +60,45 @@ const WellnessOverview = () => {
   }, [navigate]);
 
   const mapSentimentToLevel = (sentiment) => {
+    if (!sentiment) return "Medium";
     if (sentiment.toLowerCase() === "positive") return "Low";
     if (sentiment.toLowerCase() === "neutral") return "Medium";
     return "High";
   };
 
   const mapConfidenceToLevel = (confidence) => {
+    if (!confidence) return "Low";
     if (confidence < 40) return "Low";
     if (confidence < 70) return "Medium";
     return "High";
   };
 
-  // Function to map risk level to Low, Medium, or High
   const mapRiskToLevel = (risk) => {
-    if (!risk) return "Low";
-    const normalized = risk.toLowerCase();
-    if (normalized === "high") return "high"; 
-    if (normalized === "medium") return "medium"; 
-    return "low"; // Default to "low"
+    if (!risk) return "No Risk";
+    if (risk.includes("High")) return "High";
+    if (risk.includes("Moderate")) return "Medium";
+    if (risk.includes("Low")) return "Low";
+    return "No Risk";
   };
 
-  const cardBase =
-    "bg-white/40 backdrop-blur-md rounded-3xl shadow-xl p-8 text-center border border-white/30 hover:shadow-gray-600/40 hover:ring-2 hover:ring-gray-500/40 transition-all duration-300";
+  const cardBase = "bg-white/40 backdrop-blur-md rounded-3xl shadow-xl p-8 text-center border border-white/30 hover:shadow-gray-600/40 hover:ring-2 hover:ring-gray-500/40 transition-all duration-300";
+  const iconContainer = "w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md ring-2 ring-white/40 shadow-md";
 
-  const iconContainer =
-    "w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md ring-2 ring-white/40 shadow-md";
+  if (overviewData.isLoading) {
+    return (
+      <div className="flex-1 min-h-screen p-6 bg-gradient-to-b from-[#297194] via-[#D1E1F7] to-[#E7F2F7] flex items-center justify-center">
+        <div className="text-2xl font-semibold text-gray-700">Loading wellness data...</div>
+      </div>
+    );
+  }
+
+  if (overviewData.error) {
+    return (
+      <div className="flex-1 min-h-screen p-6 bg-gradient-to-b from-[#297194] via-[#D1E1F7] to-[#E7F2F7] flex items-center justify-center">
+        <div className="text-2xl font-semibold text-red-600">{overviewData.error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 min-h-screen p-6 bg-gradient-to-b from-[#297194] via-[#D1E1F7] to-[#E7F2F7] text-gray-800">
@@ -95,7 +120,7 @@ const WellnessOverview = () => {
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Sentiment</h3>
           <ShieldIndicator
             level={mapSentimentToLevel(overviewData.sentiment)}
-            label={overviewData.sentiment}
+            label={overviewData.sentiment || "Unknown"}
           />
         </motion.div>
 
@@ -106,7 +131,7 @@ const WellnessOverview = () => {
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Disorder</h3>
           <ShieldIndicator
             level={mapConfidenceToLevel(overviewData.disorder_confidence)}
-            label={overviewData.disorder}
+            label={overviewData.disorder || "None detected"}
           />
         </motion.div>
 
@@ -115,9 +140,9 @@ const WellnessOverview = () => {
             <FaExclamationTriangle className="text-3xl text-[#F59E0B]" />
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Risk Level</h3>
-          <ShieldIndicator
-            level={mapRiskToLevel(overviewData.risk)}  
-            label={overviewData.risk}
+          <ShieldIndicator 
+            level={mapRiskToLevel(overviewData.risk)} 
+            label={overviewData.risk || "No Risk"} 
           />
         </motion.div>
       </div>
@@ -130,7 +155,7 @@ const WellnessOverview = () => {
           </div>
           <h4 className="text-lg font-medium text-gray-800 mb-1">Sentiment Confidence</h4>
           <p className="text-gray-700 font-semibold text-lg">
-            {overviewData.sentiment_confidence.toFixed(2)}%
+            {overviewData.sentiment_confidence?.toFixed(2) || "0.00"}%
           </p>
         </motion.div>
 
@@ -140,7 +165,7 @@ const WellnessOverview = () => {
           </div>
           <h4 className="text-lg font-medium text-gray-800 mb-1">Disorder Confidence</h4>
           <p className="text-gray-700 font-semibold text-lg">
-            {overviewData.disorder_confidence.toFixed(2)}%
+            {overviewData.disorder_confidence?.toFixed(2) || "0.00"}%
           </p>
         </motion.div>
 
@@ -150,9 +175,7 @@ const WellnessOverview = () => {
           </div>
           <h4 className="text-lg font-medium text-gray-800 mb-1">Top Recommendation</h4>
           <p className="text-gray-700 font-medium leading-relaxed">
-            {overviewData.recommendations.length > 0
-              ? overviewData.recommendations[0]
-              : "No recommendations available"}
+            {overviewData.recommendations?.[0] || "No recommendations available"}
           </p>
         </motion.div>
       </div>
