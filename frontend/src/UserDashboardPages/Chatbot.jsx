@@ -44,7 +44,7 @@ const Chatbot = () => {
       const allMessages = [...updatedMessages, botMessage];
       setMessages(allMessages);
 
-      await fetch("https://mindguardaibackend.onrender.com//api/conversations", {
+      await fetch("https://mindguardaibackend.onrender.com/api/conversations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
