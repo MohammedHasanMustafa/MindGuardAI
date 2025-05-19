@@ -33,7 +33,7 @@ const WellnessOverview = () => {
 
     const fetchData = async () => {
       try {
-        const response = await axios.get("http://localhost:4000/api/chatbot/results", {
+        const response = await axios.get("https://mindguardaibackend.onrender.com/api/chatbot/results", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
