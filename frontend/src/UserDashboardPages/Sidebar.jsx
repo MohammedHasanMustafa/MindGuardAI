@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Menu,
   UserCheck,
-  Brain,
   Star,
   Bell,
   ClipboardList,
@@ -17,6 +16,7 @@ import {
 const Sidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -25,14 +25,6 @@ const Sidebar = () => {
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     navigate("/login");
-  };
-
-  const colors = {
-    dark: {
-      background: "#2D3748",
-      hover: "#4A5568",
-      text: "#E2E8F0",
-    },
   };
 
   const menuItems = [
@@ -54,7 +46,7 @@ const Sidebar = () => {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          {isSidebarOpen && <h1 className="text-xl font-bold">Mindguard</h1>}
+          {isSidebarOpen && <h1 className="text-xl font-bold">MindGuard</h1>}
           <button onClick={toggleSidebar} className="p-1 rounded-lg hover:bg-gray-700">
             <Menu size={24} />
           </button>
@@ -66,7 +58,9 @@ const Sidebar = () => {
             <Link
               to={item.path}
               key={item.title}
-              className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+              className={`flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors ${
+                location.pathname === item.path ? "bg-gray-700" : ""
+              }`}
             >
               <span className="mr-3">{item.icon}</span>
               {isSidebarOpen && <span>{item.title}</span>}
@@ -74,10 +68,10 @@ const Sidebar = () => {
           ))}
         </div>
 
-       
+        
       </div>
 
-      {/* Content Area - This should be rendered by your layout component */}
+      {/* Content Area */}
       <div className={`flex-1 overflow-auto ${isSidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300`}>
         {/* Your main content will go here */}
       </div>
