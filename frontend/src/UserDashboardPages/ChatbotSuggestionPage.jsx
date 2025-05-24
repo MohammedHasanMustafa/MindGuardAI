@@ -20,10 +20,13 @@ import {
   RefreshCw,
   Trophy,
   Play,
+  Loader2,
+  Trash2,
+  CheckCircle,
 } from "lucide-react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-
-function ChatbotSuggestionPage() {
   // Exercise recommendations data
   const exerciseRecommendations = {
   Depression: {
@@ -988,6 +991,8 @@ function ChatbotSuggestionPage() {
   }
 };
 
+
+function ChatbotSuggestionPage() {
   // State management
   const [selectedCondition, setSelectedCondition] = useState("");
   const [selectedRiskLevel, setSelectedRiskLevel] = useState("");
@@ -995,14 +1000,223 @@ function ChatbotSuggestionPage() {
   const [showAddAnimation, setShowAddAnimation] = useState(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [currentVideoLink, setCurrentVideoLink] = useState("");
+  const [apiResults, setApiResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [completedRecommendations, setCompletedRecommendations] = useState([]);
+  const [activeRecommendations, setActiveRecommendations] = useState([]);
+  const [userId, setUserId] = useState(null);
 
-  // Load habit data from localStorage on component mount
-  useEffect(() => {
-    const storedData = localStorage.getItem("habitTrackerData");
-    if (storedData) {
-      setHabitData(JSON.parse(storedData));
+
+  // Fetch latest results from API
+  function ChatbotSuggestionPage() {
+  const [selectedCondition, setSelectedCondition] = useState("");
+  const [selectedRiskLevel, setSelectedRiskLevel] = useState("");
+  const [habitData, setHabitData] = useState({});
+  const [showAddAnimation, setShowAddAnimation] = useState(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [currentVideoLink, setCurrentVideoLink] = useState("");
+  const [apiResults, setApiResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [completedRecommendations, setCompletedRecommendations] = useState([]);
+  const [activeRecommendations, setActiveRecommendations] = useState([]);
+  const [userId, setUserId] = useState(null);
+  const navigate = useNavigate();
+
+  // Get auth token from localStorage
+  const getAuthToken = () => {
+    return localStorage.getItem("token");
+  };
+
+  // Verify session and redirect if not authenticated
+  const verifySession = async () => {
+    const token = getAuthToken();
+    if (!token) {
+      navigate("/login");
+      return;
     }
-  }, []);
+
+    try {
+      const response = await axios.get("http://localhost:5000/api/auth/verify", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setUserId(response.data.userId);
+    } catch (error) {
+      console.error("Session verification failed:", error);
+      localStorage.removeItem("token");
+      navigate("/login");
+    }
+  };
+
+  // Fetch latest results from API with auth token
+  const fetchLatestResults = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:5000/api/chatbot/results", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      if (!response.data) {
+        throw new Error("Failed to fetch results");
+      }
+      
+      const data = response.data;
+      setApiResults(data);
+      
+      // Set condition and risk level from API results
+      if (data.disorder && data.risk_level) {
+        setSelectedCondition(data.disorder);
+        setSelectedRiskLevel(data.risk_level);
+      }
+      
+      // Parse recommendations if they're a string
+      const recommendations = typeof data.recommendations === 'string' 
+        ? JSON.parse(data.recommendations) 
+        : data.recommendations || [];
+      
+      setActiveRecommendations(recommendations);
+      
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch user's completed recommendations
+  const fetchCompletedRecommendations = async () => {
+    if (!userId) return;
+    
+    try {
+      const token = getAuthToken();
+      const response = await axios.get(
+        `http://localhost:5000/api/suggestions/completed`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          params: {
+            userId: userId
+          }
+        }
+      );
+      
+      if (response.data && response.data.completed) {
+        setCompletedRecommendations(response.data.completed);
+      }
+    } catch (error) {
+      console.error("Error fetching completed recommendations:", error);
+    }
+  };
+
+  // Mark a recommendation as completed
+  const markRecommendationCompleted = async (recommendationId) => {
+    if (!userId) return;
+    
+    try {
+      const token = getAuthToken();
+      await axios.post(
+        "http://localhost:5000/api/suggestions/complete",
+        {
+          userId,
+          recommendationId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      await fetchCompletedRecommendations();
+    } catch (error) {
+      console.error("Error marking recommendation as completed:", error);
+    }
+  };
+
+  // Remove a recommendation
+  const removeRecommendation = async (recommendationId) => {
+    if (!userId) return;
+    
+    try {
+      const token = getAuthToken();
+      await axios.post(
+        "http://localhost:5000/api/suggestions/remove",
+        {
+          userId,
+          recommendationId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      await fetchLatestResults();
+    } catch (error) {
+      console.error("Error removing recommendation:", error);
+    }
+  };
+
+  // Initialize data
+  useEffect(() => {
+    const initializeData = async () => {
+      await verifySession();
+      await fetchCompletedRecommendations();
+      await fetchLatestResults();
+      
+      // Load habit data from localStorage
+      const storedData = localStorage.getItem("habitTrackerData");
+      if (storedData) {
+        setHabitData(JSON.parse(storedData));
+      }
+    };
+    
+    initializeData();
+  }, [userId]);
+
+  // Save habit data to localStorage
+  useEffect(() => {
+    localStorage.setItem("habitTrackerData", JSON.stringify(habitData));
+  }, [habitData]);
+
+  // Get recommendations based on selected condition and risk level
+  const getRecommendations = () => {
+    if (
+      selectedCondition &&
+      selectedRiskLevel &&
+      exerciseRecommendations[selectedCondition] &&
+      exerciseRecommendations[selectedCondition][selectedRiskLevel]
+    ) {
+      return exerciseRecommendations[selectedCondition][selectedRiskLevel];
+    }
+    
+    // If no selection, try to use API results
+    if (apiResults && apiResults.disorder && apiResults.risk_level) {
+      const condition = apiResults.disorder;
+      const risk = apiResults.risk_level;
+      
+      if (exerciseRecommendations[condition] && exerciseRecommendations[condition][risk]) {
+        return exerciseRecommendations[condition][risk];
+      }
+    }
+    
+    return [];
+  };
+}
 
   // Save habit data to localStorage whenever it changes
   useEffect(() => {
@@ -1014,36 +1228,35 @@ function ChatbotSuggestionPage() {
     setShowVideoModal(true);
   };
 
-  // Handle closing video modal
   const handleCloseVideo = () => {
     setShowVideoModal(false);
     setCurrentVideoLink("");
   };
 
-  // Handle condition change
   const handleConditionChange = (e) => {
     setSelectedCondition(e.target.value);
     setSelectedRiskLevel("");
   };
 
-  // Handle risk level change
   const handleRiskLevelChange = (e) => {
     setSelectedRiskLevel(e.target.value);
   };
 
-  // Get habit status for a given index
   const getHabitStatus = (index) => {
     const key = `${selectedCondition}-${selectedRiskLevel}-${index}`;
     return habitData[key]?.status || "pending";
   };
 
-  // Get completed count for a given index
   const getCompletedCount = (index) => {
     const key = `${selectedCondition}-${selectedRiskLevel}-${index}`;
     return habitData[key]?.completedCount || 0;
   };
 
-  // Handle status change for a habit
+  const getStreak = (index) => {
+    const key = `${selectedCondition}-${selectedRiskLevel}-${index}`;
+    return habitData[key]?.streak || 0;
+  };
+
   const handleStatusChange = (index, status) => {
     const key = `${selectedCondition}-${selectedRiskLevel}-${index}`;
     setHabitData((prevData) => ({
@@ -1051,11 +1264,20 @@ function ChatbotSuggestionPage() {
       [key]: {
         ...prevData[key],
         status,
+        lastUpdated: new Date().toISOString(),
+        streak: status === "completed" ? (prevData[key]?.streak || 0) + 1 : 0
       },
     }));
+    
+    // If marking as completed, update the backend
+    if (status === "completed") {
+      const recommendation = getSuggestions()[index];
+      if (recommendation && recommendation.id) {
+        markRecommendationCompleted(recommendation.id);
+      }
+    }
   };
 
-  // Handle adding to completion count
   const handleAddCount = (index) => {
     const key = `${selectedCondition}-${selectedRiskLevel}-${index}`;
     const currentCount = habitData[key]?.completedCount || 0;
@@ -1064,7 +1286,10 @@ function ChatbotSuggestionPage() {
       ...prevData,
       [key]: {
         ...prevData[key],
+        status: "completed",
         completedCount: currentCount + 1,
+        lastUpdated: new Date().toISOString(),
+        streak: (prevData[key]?.streak || 0) + 1
       },
     }));
 
@@ -1072,6 +1297,19 @@ function ChatbotSuggestionPage() {
     setTimeout(() => {
       setShowAddAnimation(null);
     }, 1000);
+    
+    // Update the backend
+    const recommendation = getSuggestions()[index];
+    if (recommendation && recommendation.id) {
+      markRecommendationCompleted(recommendation.id);
+    }
+  };
+
+  const handleRemoveRecommendation = (index) => {
+    const recommendation = getSuggestions()[index];
+    if (recommendation && recommendation.id) {
+      removeRecommendation(recommendation.id);
+    }
   };
 
   // Get appropriate background and text color for each type
@@ -1083,6 +1321,12 @@ function ChatbotSuggestionPage() {
         return "bg-gradient-to-r from-green-500 to-emerald-400 text-white";
       case "Habit":
         return "bg-gradient-to-r from-purple-500 to-fuchsia-400 text-white";
+      case "Emergency":
+        return "bg-gradient-to-r from-red-500 to-pink-500 text-white";
+      case "Support":
+        return "bg-gradient-to-r from-orange-500 to-amber-400 text-white";
+      case "Therapy":
+        return "bg-gradient-to-r from-teal-500 to-emerald-400 text-white";
       default:
         return "bg-gradient-to-r from-gray-500 to-gray-400 text-white";
     }
@@ -1097,6 +1341,12 @@ function ChatbotSuggestionPage() {
         return <Activity className="w-4 h-4" />;
       case "Habit":
         return <Flame className="w-4 h-4" />;
+      case "Emergency":
+        return <AlertCircle className="w-4 h-4" />;
+      case "Support":
+        return <Heart className="w-4 h-4" />;
+      case "Therapy":
+        return <Shield className="w-4 h-4" />;
       default:
         return null;
     }
@@ -1148,7 +1398,7 @@ function ChatbotSuggestionPage() {
         return <Flame className="w-5 h-5 mr-1 text-orange-500" />;
       case "BPD":
         return <Activity className="w-5 h-5 mr-1 text-teal-600" />;
-      case "EatingDisorders":
+      case "Eating Disorders":
         return <AlertCircle className="w-5 h-5 mr-1 text-amber-600" />;
       default:
         return <Lightbulb className="w-5 h-5 mr-1 text-gray-600" />;
@@ -1183,6 +1433,67 @@ function ChatbotSuggestionPage() {
     }
   };
 
+  // Calculate completion rate
+  const calculateCompletionRate = () => {
+    const suggestions = getSuggestions();
+    if (suggestions.length === 0) return 0;
+    
+    let completedCount = 0;
+    suggestions.forEach((_, index) => {
+      if (getHabitStatus(index) === "completed" || getCompletedCount(index) > 0) {
+        completedCount++;
+      }
+    });
+    
+    return Math.round((completedCount / suggestions.length) * 100);
+  };
+
+  // Get longest streak
+  const getLongestStreak = () => {
+    const suggestions = getSuggestions();
+    if (suggestions.length === 0) return 0;
+    
+    let maxStreak = 0;
+    suggestions.forEach((_, index) => {
+      const streak = getStreak(index);
+      if (streak > maxStreak) {
+        maxStreak = streak;
+      }
+    });
+    
+    return maxStreak;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 via-blue-50 to-purple-50">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 text-indigo-600 animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-700">Loading your personalized recommendations...</h2>
+          <p className="text-gray-500 mt-2">Analyzing your mental health assessment</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 via-blue-50 to-purple-50">
+        <div className="text-center max-w-md p-6 bg-white rounded-xl shadow-lg">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-700">Error loading recommendations</h2>
+          <p className="text-gray-500 mt-2">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-blue-50 to-purple-50 py-8 px-4">
       <div className="container mx-auto max-w-6xl">
@@ -1211,7 +1522,8 @@ function ChatbotSuggestionPage() {
             </div>
           </div>
         )}
-        {/* Header with animated gradient */}
+
+        {/* Header */}
         <div className="text-center mb-12">
           <div className="relative inline-block">
             <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4 pb-2">
@@ -1220,12 +1532,108 @@ function ChatbotSuggestionPage() {
             <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 rounded-full"></div>
           </div>
           <p className="text-gray-600 max-w-2xl mx-auto mt-4 text-lg">
-            Select your condition and risk level, then track your daily habits
-            for improved mental well-being
+            Based on your assessment, here are personalized recommendations to support your mental well-being
           </p>
         </div>
 
-        {/* Selection Dropdowns - Further Improved UI */}
+        {/* API Results Summary */}
+        {apiResults && (
+          <div className="bg-white p-6 rounded-2xl shadow-xl mb-8 border border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <Bookmark className="mr-2 h-5 w-5 text-indigo-600" />
+              Your Assessment Results
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                <div className="flex items-center">
+                  <Brain className="h-5 w-5 text-indigo-600 mr-2" />
+                  <h3 className="font-medium text-gray-700">Condition</h3>
+                </div>
+                <p className="text-lg font-bold text-indigo-800 mt-1">{apiResults.disorder || "Not specified"}</p>
+                <p className="text-sm text-indigo-600">Confidence: {apiResults.disorder_confidence ? `${apiResults.disorder_confidence}%` : "N/A"}</p>
+              </div>
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                <div className="flex items-center">
+                  <ThermometerSun className="h-5 w-5 text-amber-600 mr-2" />
+                  <h3 className="font-medium text-gray-700">Risk Level</h3>
+                </div>
+                <p className="text-lg font-bold text-amber-800 mt-1">{apiResults.risk_level || "Not specified"}</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                <div className="flex items-center">
+                  <Activity className="h-5 w-5 text-green-600 mr-2" />
+                  <h3 className="font-medium text-gray-700">Sentiment</h3>
+                </div>
+                <p className="text-lg font-bold text-green-800 mt-1">{apiResults.sentiment || "Not analyzed"}</p>
+                <p className="text-sm text-green-600">Confidence: {apiResults.sentiment_confidence ? `${apiResults.sentiment_confidence}%` : "N/A"}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Progress Stats */}
+        {selectedCondition && selectedRiskLevel && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white p-5 rounded-xl shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Completion Rate</h3>
+                  <p className="text-2xl font-bold text-indigo-600">{calculateCompletionRate()}%</p>
+                </div>
+                <div className="w-16 h-16">
+                  <svg className="w-full h-full" viewBox="0 0 36 36">
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="#E5E7EB"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="#4F46E5"
+                      strokeWidth="3"
+                      strokeDasharray={`${calculateCompletionRate()}, 100`}
+                    />
+                    <text x="18" y="20.5" textAnchor="middle" fill="#4F46E5" fontSize="10" fontWeight="bold">
+                      {calculateCompletionRate()}%
+                    </text>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-5 rounded-xl shadow-md border border-gray-200">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Current Streak</h3>
+                <p className="text-2xl font-bold text-green-600">{getLongestStreak()} days</p>
+              </div>
+              <div className="mt-2">
+                <div className="flex space-x-1">
+                  {Array.from({ length: Math.min(7, getLongestStreak()) }).map((_, i) => (
+                    <div key={i} className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-5 rounded-xl shadow-md border border-gray-200">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Total Activities</h3>
+                <p className="text-2xl font-bold text-purple-600">{getSuggestions().length}</p>
+              </div>
+              <div className="mt-2">
+                <p className="text-sm text-gray-500">
+                  {getSuggestions().filter((_, i) => getHabitStatus(i) === "completed" || getCompletedCount(i) > 0).length} completed
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Selection Dropdowns */}
         <div className="bg-white p-7 rounded-2xl shadow-xl mb-10 border border-gray-200 transform transition-all hover:shadow-2xl backdrop-blur-sm bg-opacity-90">
           <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Target className="mr-2 h-5 w-5 text-indigo-600" />
@@ -1268,21 +1676,6 @@ function ChatbotSuggestionPage() {
                     )}
                   </span>
                 </div>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
               </div>
             </div>
 
@@ -1324,27 +1717,12 @@ function ChatbotSuggestionPage() {
                     )}
                   </span>
                 </div>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Habit Cards - Enhanced UI with wider cards and shorter height */}
+        {/* Habit Cards */}
         {selectedCondition && selectedRiskLevel && (
           <div className="mb-8">
             <div
@@ -1382,6 +1760,7 @@ function ChatbotSuggestionPage() {
               {getSuggestions().map((suggestion, index) => {
                 const status = getHabitStatus(index);
                 const completedCount = getCompletedCount(index);
+                const streak = getStreak(index);
 
                 return (
                   <div
@@ -1421,7 +1800,6 @@ function ChatbotSuggestionPage() {
                         <Play className="h-5 w-5 fill-current" />
                       </button>
                     </div>
-                    
 
                     <div className="p-4 relative">
                       {showAddAnimation === index && (
@@ -1446,103 +1824,128 @@ function ChatbotSuggestionPage() {
                           • {suggestion.content2}
                         </div>
 
-                        <div className="absolute -left-2 -top-1 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:translate-y-1">
-                          <div className="relative">
-                            <Sparkles className="h-6 w-6 text-yellow-500 animate-float absolute" />
-                            <Sparkles className="h-4 w-4 text-yellow-400 animate-float absolute top-1 left-1" />
-                          </div>
-                        </div>
-
-                        <div className="absolute -right-2 -top-1 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:translate-y-1">
-                          <div className="relative">
-                            <Star className="h-6 w-6 text-amber-500 animate-float absolute" />
-                            <Star className="h-3 w-3 text-amber-400 animate-pulse absolute top-1.5 left-1.5" />
-                          </div>
-                        </div>
-
-                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent transform scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
-                      </div>
-
-                      <div className="mt-3 animate-slideUp">
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-sm font-medium text-gray-600 flex items-center">
-                            <Activity className="h-4 w-4 mr-1.5 text-indigo-500" />
-                            Status:
-                          </span>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              className={`rounded-full ${getButtonStyles(
-                                status,
-                                "pending"
-                              )} hover:scale-110 transition-all duration-300 flex items-center justify-center w-9 h-9 shadow-sm hover:shadow-md`}
-                              onClick={() =>
-                                handleStatusChange(index, "pending")
-                              }
-                              aria-label="Mark as pending"
-                              title="Pending"
-                            >
-                              <Clock className="h-4 w-4" />
-                            </button>
-                            <button
-                              className={`rounded-full ${getButtonStyles(
-                                status,
-                                "completed"
-                              )} hover:scale-110 transition-all duration-300 flex items-center justify-center w-9 h-9 shadow-sm hover:shadow-md`}
-                              onClick={() =>
-                                handleStatusChange(index, "completed")
-                              }
-                              aria-label="Mark as completed"
-                              title="Completed"
-                            >
-                              <Check className="h-4 w-4" />
-                            </button>
-                            <button
-                              className={`rounded-full ${getButtonStyles(
-                                status,
-                                "skipped"
-                              )} hover:scale-110 transition-all duration-300 flex items-center justify-center w-9 h-9 shadow-sm hover:shadow-md`}
-                              onClick={() =>
-                                handleStatusChange(index, "skipped")
-                              }
-                              aria-label="Mark as skipped"
-                              title="Skipped"
-                            >
-                              <AlertCircle className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="relative group">
-                            <div className="flex items-center bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 transition-colors duration-300 rounded-lg px-3 py-1.5 text-indigo-800 shadow-sm border border-indigo-100 group-hover:border-indigo-300">
-                              <Award className="h-4 w-4 mr-1.5 text-yellow-500 animate-pulse" />
-                              <span className="text-sm font-bold">
-                                {completedCount}{" "}
-                                {completedCount === 1 ? "time" : "times"}
-                              </span>
+                        <div className="mt-3 animate-slideUp">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-sm font-medium text-gray-600 flex items-center">
+                              <Activity className="h-4 w-4 mr-1.5 text-indigo-500" />
+                              Status:
+                            </span>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                className={`rounded-full ${getButtonStyles(
+                                  status,
+                                  "pending"
+                                )} hover:scale-110 transition-all duration-300 flex items-center justify-center w-9 h-9 shadow-sm hover:shadow-md`}
+                                onClick={() =>
+                                  handleStatusChange(index, "pending")
+                                }
+                                aria-label="Mark as pending"
+                                title="Pending"
+                              >
+                                <Clock className="h-4 w-4" />
+                              </button>
+                              <button
+                                className={`rounded-full ${getButtonStyles(
+                                  status,
+                                  "completed"
+                                )} hover:scale-110 transition-all duration-300 flex items-center justify-center w-9 h-9 shadow-sm hover:shadow-md`}
+                                onClick={() =>
+                                  handleStatusChange(index, "completed")
+                                }
+                                aria-label="Mark as completed"
+                                title="Completed"
+                              >
+                                <Check className="h-4 w-4" />
+                              </button>
+                              <button
+                                className={`rounded-full ${getButtonStyles(
+                                  status,
+                                  "skipped"
+                                )} hover:scale-110 transition-all duration-300 flex items-center justify-center w-9 h-9 shadow-sm hover:shadow-md`}
+                                onClick={() =>
+                                  handleStatusChange(index, "skipped")
+                                }
+                                aria-label="Mark as skipped"
+                                title="Skipped"
+                              >
+                                <AlertCircle className="h-4 w-4" />
+                              </button>
                             </div>
-                            <div className="absolute -top-2 -right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                              <div className="relative">
-                                <Trophy className="h-4 w-4 text-yellow-500 animate-bounce" />
+                          </div>
+
+                          <div className="flex items-center justify-between mt-3">
+                            <div className="flex items-center space-x-3">
+                              <div className="relative group">
+                                <div className="flex items-center bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 transition-colors duration-300 rounded-lg px-3 py-1.5 text-indigo-800 shadow-sm border border-indigo-100 group-hover:border-indigo-300">
+                                  <Award className="h-4 w-4 mr-1.5 text-yellow-500 animate-pulse" />
+                                  <span className="text-sm font-bold">
+                                    {completedCount}{" "}
+                                    {completedCount === 1 ? "time" : "times"}
+                                  </span>
+                                </div>
                               </div>
+                              {streak > 0 && (
+                                <div className="bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
+                                  <span className="text-sm font-bold text-green-800 flex items-center">
+                                    <Flame className="h-4 w-4 mr-1 text-orange-500" />
+                                    {streak} day{streak !== 1 ? "s" : ""}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex space-x-2">
+                              <button
+                                className="relative overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white flex items-center text-sm font-medium px-3 py-1.5 rounded-lg hover:scale-110 transition-all duration-300 shadow-md hover:shadow-lg group"
+                                onClick={() => handleAddCount(index)}
+                                title="Add to completion count"
+                              >
+                                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 animate-gradient-x"></span>
+                                <PlusCircle className="h-4 w-4 mr-1.5 group-hover:animate-ping" />
+                                <span className="relative z-10">Add Count</span>
+                              </button>
+                              <button
+                                className="relative overflow-hidden bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white flex items-center text-sm font-medium px-3 py-1.5 rounded-lg hover:scale-110 transition-all duration-300 shadow-md hover:shadow-lg group"
+                                onClick={() => handleRemoveRecommendation(index)}
+                                title="Remove this recommendation"
+                              >
+                                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-red-500/20 to-rose-500/20 animate-gradient-x"></span>
+                                <Trash2 className="h-4 w-4 mr-1.5" />
+                                <span className="relative z-10">Remove</span>
+                              </button>
                             </div>
                           </div>
-
-                          <button
-                            className="relative overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white flex items-center text-sm font-medium px-3 py-1.5 rounded-lg hover:scale-110 transition-all duration-300 shadow-md hover:shadow-lg group"
-                            onClick={() => handleAddCount(index)}
-                            title="Add to completion count"
-                          >
-                            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 animate-gradient-x"></span>
-                            <PlusCircle className="h-4 w-4 mr-1.5 group-hover:animate-ping" />
-                            <span className="relative z-10">Add Count</span>
-                          </button>
                         </div>
                       </div>
                     </div>
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Completed Recommendations Section */}
+        {completedRecommendations.length > 0 && (
+          <div className="bg-white p-6 rounded-2xl shadow-xl mb-8 border border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <CheckCircle className="mr-2 h-5 w-5 text-green-600" />
+              Completed Recommendations
+            </h2>
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <ul className="space-y-2">
+                {completedRecommendations.map((rec, index) => (
+                  <li key={index} className="flex items-center justify-between p-2 bg-white rounded-lg border border-green-100">
+                    <span className="text-gray-700">{rec}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center">
+                        <Check className="h-3 w-3 mr-1" />
+                        Completed
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         )}
