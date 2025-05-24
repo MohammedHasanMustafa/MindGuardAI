@@ -18,7 +18,7 @@ const ResetPassword = () => {
     setError("");
 
     try {
-      const res = await axios.put(`https://mindguardaibackend.onrender.com/api/reset-password/${token}`, {
+      const res = await axios.put(`http://localhost:5000/api/reset-password/${token}`, {
         newPassword,
       });
 
