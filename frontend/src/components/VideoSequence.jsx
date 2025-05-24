@@ -4,9 +4,9 @@ const VideoSequence = () => {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
   const videos = [
-    "/home.mp4", 
+    "/home2.mp4", 
     "/home2.mp4",
-    "/home3.mp4",
+    "/home2.mp4",
   ];
 
   const handleVideoEnd = () => {
