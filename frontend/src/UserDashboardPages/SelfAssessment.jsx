@@ -7,7 +7,6 @@ import {
   FaBolt,
   FaUtensils,
   FaUsers,
-  FaComments,
   FaChartLine,
   FaDownload,
   FaBook,
@@ -18,7 +17,6 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AssessmentHeatmap from "./AssessmentHeatmap";
-import Chatbot from "./Chatbot";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
@@ -73,22 +71,21 @@ const motivationalQuotes = [
 ];
 
 const SelfAssessmentPage = () => {
-  const [phq9, setPhq9] = useState(Array(9).fill(null));
-  const [gad7, setGad7] = useState(Array(7).fill(null));
-  const [pss, setPss] = useState(Array(10).fill(null));
-  const [sleepQuality, setSleepQuality] = useState(Array(4).fill(null));
+  const [phq9, setPhq9] = useState(Array(9).fill(0));
+  const [gad7, setGad7] = useState(Array(7).fill(0));
+  const [pss, setPss] = useState(Array(10).fill(0));
+  const [sleepQuality, setSleepQuality] = useState(Array(4).fill(0));
   const [mood, setMood] = useState(2);
   const [sleep, setSleep] = useState(2);
   const [energy, setEnergy] = useState(2);
-  const [appetite, setAppetite] = useState(1);
-  const [social, setSocial] = useState(1);
+  const [appetite, setAppetite] = useState(2);
+  const [social, setSocial] = useState(2);
   const [notes, setNotes] = useState("");
   const [currentModule, setCurrentModule] = useState("phq9");
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackContent, setFeedbackContent] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assessments, setAssessments] = useState([]);
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [streakCount, setStreakCount] = useState(0);
   const [currentQuote, setCurrentQuote] = useState("");
   const [showHistory, setShowHistory] = useState(false);
@@ -99,12 +96,13 @@ const SelfAssessmentPage = () => {
   useEffect(() => {
     setCurrentQuote(motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]);
     checkStreak();
+    fetchAssessments();
   }, []);
 
   const checkStreak = async () => {
     if (!token) return;
     try {
-      const response = await axios.get("https://mindguardaibackend.onrender.com/api/assessment/streak", {
+      const response = await axios.get("http://localhost:5000/api/assessment/streak", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.success) {
@@ -118,7 +116,7 @@ const SelfAssessmentPage = () => {
   const fetchAssessments = async () => {
     if (!token) return;
     try {
-      const response = await axios.get("https://mindguardaibackend.onrender.com/api/assessment", {
+      const response = await axios.get("http://localhost:5000/api/assessment", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -129,10 +127,6 @@ const SelfAssessmentPage = () => {
       console.error("Error fetching assessments:", error);
     }
   };
-
-  useEffect(() => {
-    fetchAssessments();
-  }, []);
 
   const handleChange = (index, value, setter) => {
     const updated = [...(setter === setPhq9 ? phq9 : 
@@ -150,19 +144,19 @@ const SelfAssessmentPage = () => {
     switch(currentModule) {
       case 'phq9':
         total = phq9.length;
-        answered = phq9.filter(val => val !== null).length;
+        answered = phq9.filter(val => val !== 0).length;
         break;
       case 'gad7':
         total = gad7.length;
-        answered = gad7.filter(val => val !== null).length;
+        answered = gad7.filter(val => val !== 0).length;
         break;
       case 'pss':
         total = pss.length;
-        answered = pss.filter(val => val !== null).length;
+        answered = pss.filter(val => val !== 0).length;
         break;
       case 'sleep':
         total = sleepQuality.length;
-        answered = sleepQuality.filter(val => val !== null).length;
+        answered = sleepQuality.filter(val => val !== 0).length;
         break;
     }
     
@@ -170,11 +164,11 @@ const SelfAssessmentPage = () => {
   };
 
   const calculatePHQ9Score = () => {
-    return phq9.reduce((sum, val) => sum + (val || 0), 0);
+    return phq9.reduce((sum, val) => sum + val, 0);
   };
 
   const calculateGAD7Score = () => {
-    return gad7.reduce((sum, val) => sum + (val || 0), 0);
+    return gad7.reduce((sum, val) => sum + val, 0);
   };
 
   const generateFeedback = () => {
@@ -232,16 +226,6 @@ const SelfAssessmentPage = () => {
   };
 
   const handleSubmit = async () => {
-    const currentAnswers = currentModule === 'phq9' ? phq9 : 
-                         currentModule === 'gad7' ? gad7 : 
-                         currentModule === 'pss' ? pss : 
-                         sleepQuality;
-    
-    if (currentAnswers.includes(null)) {
-      toast.error("Please answer all questions in the current section before submitting.");
-      return;
-    }
-
     if (!token) {
       toast.error("User not authenticated. Please log in.");
       return;
@@ -250,22 +234,21 @@ const SelfAssessmentPage = () => {
     setIsSubmitting(true);
 
     const assessmentData = {
-      phq9: currentModule === 'phq9' ? phq9 : Array(9).fill(null),
-      gad7: currentModule === 'gad7' ? gad7 : Array(7).fill(null),
-      pss: currentModule === 'pss' ? pss : Array(10).fill(null),
-      sleepQuality: currentModule === 'sleep' ? sleepQuality : Array(4).fill(null),
+      phq9,
+      gad7,
+      pss,
+      sleepQuality,
       mood,
       sleep,
       energy,
       appetite,
       social,
       notes,
-      timestamp: new Date().toISOString(),
     };
 
     try {
       const response = await axios.post(
-        "https://mindguardaibackend.onrender.com/api/assessment",
+        "http://localhost:5000/api/assessment",
         assessmentData,
         {
           headers: {
@@ -355,10 +338,6 @@ const SelfAssessmentPage = () => {
     </div>
   );
 
-  const handleViewReports = () => {
-    navigate("/dashboard/reports");
-  };
-
   const handleViewResources = () => {
     navigate("/dashboard/Resources");
   };
@@ -369,7 +348,7 @@ const SelfAssessmentPage = () => {
 
   const handleExportData = async () => {
     try {
-      const response = await axios.get("https://mindguardaibackend.onrender.com/api/assessment/export", {
+      const response = await axios.get("http://localhost:5000/api/assessment/export", {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
@@ -395,8 +374,8 @@ const SelfAssessmentPage = () => {
       mood: assessment.mood,
       sleep: assessment.sleep,
       energy: assessment.energy,
-      phq9: assessment.phq9.reduce((a, b) => a + (b || 0), 0),
-      gad7: assessment.gad7.reduce((a, b) => a + (b || 0), 0),
+      appetite: assessment.appetite,
+      social: assessment.social,
     })).slice(-7);
   };
 
@@ -425,20 +404,6 @@ const SelfAssessmentPage = () => {
       </div>
 
       <div className="fixed top-6 right-6 flex flex-col space-y-4 z-30">
-        <motion.div 
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          className="tooltip"
-          data-tip="View Reports"
-        >
-          <button
-            onClick={handleViewReports}
-            className="bg-white bg-opacity-90 p-3 rounded-full shadow-lg text-indigo-600 text-xl hover:bg-opacity-100 transition-all"
-          >
-            <FaChartLine />
-          </button>
-        </motion.div>
-        
         <motion.div 
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
@@ -481,35 +446,6 @@ const SelfAssessmentPage = () => {
           </button>
         </motion.div>
       </div>
-
-      <div className="fixed bottom-6 right-6 z-40">
-        <motion.button
-          onClick={() => setIsChatbotOpen(!isChatbotOpen)}
-          className="bg-white bg-opacity-90 p-4 rounded-full shadow-lg text-indigo-600 text-2xl hover:bg-opacity-100 transition-all"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <FaComments />
-        </motion.button>
-      </div>
-
-      {isChatbotOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 z-50 flex justify-center items-center p-4">
-          <motion.div 
-            className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-xl"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <button
-              onClick={() => setIsChatbotOpen(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-xl"
-            >
-              &times;
-            </button>
-            <Chatbot />
-          </motion.div>
-        </div>
-      )}
 
       {showHistory && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 z-40 flex justify-center items-center p-4">
@@ -835,122 +771,160 @@ const SelfAssessmentPage = () => {
           </motion.div>
           
           <motion.div 
-            className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl shadow-xl p-6 flex-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-2xl font-bold text-indigo-800 mb-4">Your Trends</h2>
-            
-            {assessments.length > 0 ? (
-              <>
-                <div className="h-64 mb-6">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis 
-                        dataKey="name" 
-                        tick={{ fill: '#4f46e5' }} 
-                        tickMargin={10}
-                      />
-                      <YAxis 
-                        tick={{ fill: '#4f46e5' }}
-                        tickMargin={10}
-                      />
-                      <Tooltip 
-                        contentStyle={{
-                          backgroundColor: '#fff',
-                          borderColor: '#4f46e5',
-                          borderRadius: '0.5rem',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                        }}
-                      />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="mood" 
-                        stroke="#8884d8" 
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="sleep" 
-                        stroke="#82ca9d" 
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="energy" 
-                        stroke="#ffc658" 
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-indigo-800 mb-2">PHQ-9 & GAD-7 Scores</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis 
-                          dataKey="name" 
-                          tick={{ fill: '#4f46e5' }} 
-                          tickMargin={10}
-                        />
-                        <YAxis 
-                          tick={{ fill: '#4f46e5' }}
-                          tickMargin={10}
-                        />
-                        <Tooltip 
-                          contentStyle={{
-                            backgroundColor: '#fff',
-                            borderColor: '#4f46e5',
-                            borderRadius: '0.5rem',
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                          }}
-                        />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="phq9" 
-                          stroke="#ff6b6b" 
-                          strokeWidth={2}
-                          dot={{ r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="gad7" 
-                          stroke="#48dbfb" 
-                          strokeWidth={2}
-                          dot={{ r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-indigo-800 mb-2">Assessment Heatmap</h3>
-                  <AssessmentHeatmap assessments={assessments} />
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                <FaCalendarAlt className="text-4xl mb-2" />
-                <p>Complete your first assessment to see trends</p>
-              </div>
-            )}
-          </motion.div>
+  className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl shadow-xl p-6 flex-1"
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.2 }}
+>
+  <h2 className="text-2xl font-bold text-indigo-800 mb-4">Your Trends</h2>
+  
+  {assessments.length > 0 ? (
+    <>
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">Daily Factors</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={assessments.slice().reverse().map(assessment => ({
+                date: new Date(assessment.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                mood: assessment.mood,
+                sleep: assessment.sleep,
+                energy: assessment.energy,
+                appetite: assessment.appetite,
+                social: assessment.social
+              })).slice(-7)}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: '#4f46e5' }}
+              />
+              <YAxis 
+                domain={[0, 4]}
+                tickCount={5}
+                tick={{ fill: '#4f46e5' }}
+              />
+              <Tooltip 
+                contentStyle={{
+                  background: 'white',
+                  borderColor: '#4f46e5',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="mood" 
+                stroke="#8884d8" 
+                strokeWidth={2}
+                activeDot={{ r: 6 }}
+                name="Mood"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="sleep" 
+                stroke="#82ca9d" 
+                strokeWidth={2}
+                activeDot={{ r: 6 }}
+                name="Sleep"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="energy" 
+                stroke="#ffc658" 
+                strokeWidth={2}
+                activeDot={{ r: 6 }}
+                name="Energy"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="appetite" 
+                stroke="#ff6b6b" 
+                strokeWidth={2}
+                activeDot={{ r: 6 }}
+                name="Appetite"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="social" 
+                stroke="#48dbfb" 
+                strokeWidth={2}
+                activeDot={{ r: 6 }}
+                name="Social"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      
+      <div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">Assessment Scores</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={assessments.slice().reverse().map(assessment => ({
+                date: new Date(assessment.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                PHQ9: assessment.phq9.reduce((a, b) => a + b, 0),
+                GAD7: assessment.gad7.reduce((a, b) => a + b, 0),
+                PSS: assessment.pss.reduce((a, b) => a + b, 0)
+              })).slice(-7)}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: '#4f46e5' }}
+              />
+              <YAxis 
+                tick={{ fill: '#4f46e5' }}
+              />
+              <Tooltip 
+                contentStyle={{
+                  background: 'white',
+                  borderColor: '#4f46e5',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="PHQ9" 
+                stroke="#8884d8" 
+                strokeWidth={2}
+                activeDot={{ r: 6 }}
+                name="PHQ-9 Score"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="GAD7" 
+                stroke="#82ca9d" 
+                strokeWidth={2}
+                activeDot={{ r: 6 }}
+                name="GAD-7 Score"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="PSS" 
+                stroke="#ffc658" 
+                strokeWidth={2}
+                activeDot={{ r: 6 }}
+                name="PSS Score"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </>
+  ) : (
+    <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+      <FaCalendarAlt className="text-4xl mb-2" />
+      <p>Complete your first assessment to see trends</p>
+    </div>
+  )}
+</motion.div>
         </div>
       </div>
     </div>
