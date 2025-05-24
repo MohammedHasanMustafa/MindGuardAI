@@ -2,14 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { 
-  FiSun, FiMoon, FiUpload, FiLogOut, FiUser, FiMail, 
+  FiUpload, FiLogOut, FiUser, FiMail, 
   FiLock, FiEdit2, FiHelpCircle, FiClock, FiBell,
-  FiInstagram, FiTwitter, FiFacebook, FiLinkedin, FiGlobe
+  FiInstagram, FiTwitter, FiFacebook, FiLinkedin
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-
-// Dark mode context to share across all pages
-export const DarkModeContext = React.createContext();
+import { Box, Typography, Button, TextField, TextareaAutosize, Chip } from "@mui/material";
 
 const Settings = () => {
   const [formData, setFormData] = useState({
@@ -17,28 +15,11 @@ const Settings = () => {
     email: "",
     password: "",
     bio: "",
-    profileImage: null,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    notifications: {
-      email: true,
-      push: true,
-      sms: false,
-    },
-    socialMedia: {
-      instagram: "",
-      twitter: "",
-      facebook: "",
-      linkedin: ""
-    }
+    profile_image: null,
   });
   
   const [initialData, setInitialData] = useState({});
   const [preview, setPreview] = useState("");
-  const [darkMode, setDarkMode] = useState(() => {
-    const savedMode = localStorage.getItem("darkMode");
-    return savedMode ? JSON.parse(savedMode) : 
-      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
   const [activeTab, setActiveTab] = useState("profile");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -47,59 +28,29 @@ const Settings = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  // Apply dark mode to entire app
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-    localStorage.setItem("darkMode", JSON.stringify(darkMode));
-  }, [darkMode]);
-
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get("https://mindguardaibackend.onrender.com/api/auth/dashboard", {
+        const res = await axios.get("http://localhost:5000/api/users/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const user = res.data.user;
+        const user = res.data;
         setFormData({
           name: user.name,
           email: user.email,
           password: "",
           bio: user.bio || "",
-          profileImage: null,
-          timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-          notifications: user.notifications || {
-            email: true,
-            push: true,
-            sms: false,
-          },
-          socialMedia: user.socialMedia || {
-            instagram: "",
-            twitter: "",
-            facebook: "",
-            linkedin: ""
-          }
+          profile_image: null,
         });
         setInitialData({ ...user });
-        setPreview(user.profileImage || "");
+        setPreview(user.profile_image || "");
       } catch (err) {
+        console.error("Failed to fetch user profile:", err);
         navigate("/login");
       }
     };
     fetchUser();
   }, [token, navigate]);
-
-  // Timezone options
-  const timezones = [
-    "America/New_York",
-    "America/Chicago",
-    "America/Denver",
-    "America/Los_Angeles",
-    "Europe/London",
-    "Europe/Paris",
-    "Asia/Chennai",
-    "Australia/Sydney",
-
-  ];
 
   const validate = () => {
     const newErrors = {};
@@ -124,39 +75,19 @@ const Settings = () => {
     }
   };
 
-  const handleNotificationChange = (type) => {
-    setFormData(prev => ({
-      ...prev,
-      notifications: {
-        ...prev.notifications,
-        [type]: !prev.notifications[type]
-      }
-    }));
-  };
-
-  const handleSocialMediaChange = (platform, value) => {
-    setFormData(prev => ({
-      ...prev,
-      socialMedia: {
-        ...prev.socialMedia,
-        [platform]: value
-      }
-    }));
-  };
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.size > 5 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, profileImage: "Image must be less than 5MB" }));
+      setErrors(prev => ({ ...prev, profile_image: "Image must be less than 5MB" }));
       return;
     }
-    setFormData(prev => ({ ...prev, profileImage: file }));
+    setFormData(prev => ({ ...prev, profile_image: file }));
     setPreview(URL.createObjectURL(file));
-    setErrors(prev => ({ ...prev, profileImage: "" }));
+    setErrors(prev => ({ ...prev, profile_image: "" }));
   };
 
   const handleReset = () => {
-    setFormData({ ...initialData, password: "", profileImage: null });
+    setFormData({ ...initialData, password: "", profile_image: null });
     setPreview("");
     setErrors({});
   };
@@ -166,23 +97,27 @@ const Settings = () => {
     if (!validate()) return;
     
     setIsSubmitting(true);
-    const userId = JSON.parse(atob(token.split(".")[1])).id;
     const data = new FormData();
     data.append("name", formData.name);
     data.append("email", formData.email);
     data.append("bio", formData.bio);
-    data.append("timezone", formData.timezone);
-    data.append("notifications", JSON.stringify(formData.notifications));
-    data.append("socialMedia", JSON.stringify(formData.socialMedia));
     if (formData.password) data.append("password", formData.password);
-    if (formData.profileImage) data.append("profileImage", formData.profileImage);
+    if (formData.profile_image) data.append("profile_image", formData.profile_image);
 
     try {
-      await axios.put(`https://mindguardaibackend.onrender.com//api/auth/profile/${userId}`, data, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+      await axios.put("http://localhost:5000/api/users/profile", data, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data" 
+        },
       });
       setSuccessMessage("✅ Profile updated successfully!");
       setTimeout(() => setSuccessMessage(""), 3000);
+      // Refresh user data
+      const res = await axios.get("http://localhost:5000/api/users/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setInitialData(res.data);
     } catch (err) {
       console.error(err);
       setErrors(prev => ({
@@ -199,860 +134,695 @@ const Settings = () => {
     navigate("/login");
   };
 
-  const toggleDarkMode = () => setDarkMode(!darkMode);
-
   const tabs = [
     { id: "profile", label: "Profile", icon: <FiUser /> },
-    { id: "preferences", label: "Preferences", icon: <FiBell /> },
-    { id: "social", label: "Social Media", icon: <FiInstagram /> },
     { id: "security", label: "Security", icon: <FiLock /> },
     { id: "help", label: "Help Center", icon: <FiHelpCircle /> },
   ];
 
   return (
-    <DarkModeContext.Provider value={{ darkMode, toggleDarkMode }}>
-      <div className={`min-h-screen p-4 md:p-6 transition-colors duration-300 ${
-        darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
-      }`}>
-        <motion.div
-          className={`max-w-4xl mx-auto rounded-2xl shadow-xl overflow-hidden ${
-            darkMode ? "bg-gray-800" : "bg-white"
-          }`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          {/* Header */}
-          <div className={`p-6 border-b ${
-            darkMode ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-gray-50"
-          }`}>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h1 className="text-2xl font-bold flex items-center gap-3">
-                  <span className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300">
-                    <FiEdit2 />
-                  </span>
-                  Account Settings
-                </h1>
-                <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">
-                  Manage your profile and account preferences
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={toggleDarkMode}
-                  className={`p-2 rounded-full transition-colors ${
-                    darkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-                  aria-label="Toggle theme"
+    <Box
+      sx={{
+        p: { xs: 3, md: 5 },
+        minHeight: "100vh",
+        background: "linear-gradient(to bottom, #297194, #D1E1F7, #E7F2F7)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        fontFamily: "'Poppins', sans-serif",
+      }}
+    >
+      <motion.div
+        className="max-w-4xl w-full"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        {/* Header */}
+        <Box sx={{ 
+          p: 3,
+          mb: 3,
+          borderRadius: "12px",
+          background: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(5px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: "0 8px 16px rgba(0,0,0,0.1)"
+        }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            gap: 2
+          }}>
+            <Box>
+              <Typography variant="h4" fontWeight="700" sx={{ color: "#2C3E50" }}>
+                <Box component="span" sx={{ 
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                  borderRadius: '50%',
+                  width: 40,
+                  height: 40,
+                  mr: 2
+                }}>
+                  <FiEdit2 style={{ color: "#2E7D32" }} />
+                </Box>
+                Account Settings
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#546E7A", mt: 1 }}>
+                Manage your profile and account preferences
+              </Typography>
+            </Box>
+            <Button
+              onClick={handleLogout}
+              startIcon={<FiLogOut />}
+              sx={{
+                color: "#D32F2F",
+                '&:hover': {
+                  backgroundColor: 'rgba(211, 47, 47, 0.1)'
+                }
+              }}
+            >
+              Logout
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Main Content */}
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', md: 'row' },
+          borderRadius: "12px",
+          background: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(5px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+          overflow: 'hidden'
+        }}>
+          {/* Sidebar */}
+          <Box sx={{ 
+            width: { xs: '100%', md: 220 },
+            p: 2,
+            borderBottom: { xs: '1px solid rgba(0,0,0,0.1)', md: 'none' },
+            borderRight: { xs: 'none', md: '1px solid rgba(0,0,0,0.1)' }
+          }}>
+            <Box sx={{ 
+              display: 'flex',
+              flexDirection: { xs: 'row', md: 'column' },
+              gap: 1,
+              overflowX: { xs: 'auto', md: 'visible' },
+              pb: { xs: 1, md: 0 }
+            }}>
+              {tabs.map((tab) => (
+                <Button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  startIcon={tab.icon}
+                  sx={{
+                    justifyContent: { xs: 'center', md: 'flex-start' },
+                    minWidth: 'auto',
+                    borderRadius: "8px",
+                    textTransform: 'none',
+                    color: activeTab === tab.id ? "#FFFFFF" : "#2C3E50",
+                    backgroundColor: activeTab === tab.id ? "#297194" : "transparent",
+                    '&:hover': {
+                      backgroundColor: activeTab === tab.id ? "#1D4E6B" : "rgba(41, 113, 148, 0.1)"
+                    }
+                  }}
                 >
-                  {darkMode ? <FiSun className="text-yellow-300" /> : <FiMoon />}
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-                    darkMode 
-                      ? "text-red-400 hover:bg-gray-700" 
-                      : "text-red-600 hover:bg-gray-100"
-                  }`}
+                  {tab.label}
+                </Button>
+              ))}
+            </Box>
+          </Box>
+
+          {/* Content Area */}
+          <Box sx={{ flex: 1, p: 4 }}>
+            <AnimatePresence mode="wait">
+              {activeTab === "profile" && (
+                <motion.div
+                  key="profile"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <FiLogOut />
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
-              </div>
-            </div>
-          </div>
+                  <Typography variant="h5" fontWeight="600" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <FiUser /> Profile Information
+                  </Typography>
+                  
+                  {successMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      sx={{
+                        mb: 3,
+                        p: 2,
+                        borderRadius: "8px",
+                        backgroundColor: "rgba(46, 125, 50, 0.1)",
+                        color: "#2E7D32"
+                      }}
+                    >
+                      {successMessage}
+                    </motion.div>
+                  )}
+                  
+                  {errors.server && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      sx={{
+                        mb: 3,
+                        p: 2,
+                        borderRadius: "8px",
+                        backgroundColor: "rgba(211, 47, 47, 0.1)",
+                        color: "#D32F2F"
+                      }}
+                    >
+                      {errors.server}
+                    </motion.div>
+                  )}
 
-          {/* Main Content */}
-          <div className="flex flex-col md:flex-row">
-            {/* Sidebar */}
-            <div className={`w-full md:w-56 p-4 border-b md:border-b-0 md:border-r ${
-              darkMode ? "border-gray-700" : "border-gray-200"
-            }`}>
-              <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm whitespace-nowrap transition-colors ${
-                      activeTab === tab.id
-                        ? darkMode
-                          ? "bg-blue-900/50 text-blue-300"
-                          : "bg-blue-100 text-blue-700"
-                        : darkMode
-                          ? "hover:bg-gray-700"
-                          : "hover:bg-gray-100"
-                    }`}
-                  >
-                    {tab.icon}
-                    {tab.label}
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-            {/* Content Area */}
-            <div className="flex-1 p-6">
-              <AnimatePresence mode="wait">
-                {activeTab === "profile" && (
-                  <motion.div
-                    key="profile"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                      <FiUser />
-                      Profile Information
-                    </h2>
-                    
-                    {successMessage && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`mb-6 p-3 rounded-md ${
-                          darkMode ? "bg-green-900/30 text-green-300" : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {successMessage}
-                      </motion.div>
-                    )}
-                    
-                    {errors.server && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`mb-6 p-3 rounded-md ${
-                          darkMode ? "bg-red-900/30 text-red-300" : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {errors.server}
-                      </motion.div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      {/* Profile Image */}
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                        <div className="relative group">
-                          {preview ? (
-                            <img 
-                              src={preview} 
-                              alt="preview" 
-                              className="w-24 h-24 rounded-full object-cover border-2 border-blue-500"
-                            />
-                          ) : (
-                            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl ${
-                              darkMode ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-500"
-                            }`}>
-                              {formData.name ? formData.name.charAt(0).toUpperCase() : "👤"}
-                            </div>
-                          )}
-                          <label className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs cursor-pointer shadow-md hover:bg-blue-700 transition-colors">
-                            <FiUpload className="inline mr-1" />
-                            Change
-                            <input
-                              type="file"
-                              onChange={handleFileChange}
-                              accept="image/*"
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                        <div>
-                          <p className="text-sm mb-1 text-gray-500 dark:text-gray-400">
-                            Recommended: Square image, at least 200x200 pixels
-                          </p>
-                          {errors.profileImage && (
-                            <p className="text-sm text-red-500">{errors.profileImage}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Name */}
-                      <div>
-                        <label className="block font-medium mb-1 flex items-center gap-2">
-                          <FiUser size={16} />
-                          Full Name
-                        </label>
-                        <input
-                          type="text"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleChange}
-                          className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600" 
-                              : "bg-white border-gray-300"
-                          } ${errors.name ? "border-red-500" : ""}`}
-                          required
-                        />
-                        {errors.name && (
-                          <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                  <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {/* Profile Image */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Box sx={{ position: 'relative' }}>
+                        {preview ? (
+                          <Box
+                            component="img"
+                            src={preview}
+                            sx={{
+                              width: 100,
+                              height: 100,
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                              border: "2px solid #297194"
+                            }}
+                          />
+                        ) : (
+                          <Box sx={{
+                            width: 100,
+                            height: 100,
+                            borderRadius: "50%",
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: "rgba(41, 113, 148, 0.1)",
+                            color: "#297194",
+                            fontSize: "2rem",
+                            border: "2px solid #297194"
+                          }}>
+                            {formData.name ? formData.name.charAt(0).toUpperCase() : "👤"}
+                          </Box>
                         )}
-                      </div>
-
-                      {/* Email */}
-                      <div>
-                        <label className="block font-medium mb-1 flex items-center gap-2">
-                          <FiMail size={16} />
-                          Email Address
-                        </label>
-                        <input
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600" 
-                              : "bg-white border-gray-300"
-                          } ${errors.email ? "border-red-500" : ""}`}
-                          required
-                        />
-                        {errors.email && (
-                          <p className="mt-1 text-sm text-red-500">{errors.email}</p>
-                        )}
-                      </div>
-
-                      {/* Bio */}
-                      <div>
-                        <label className="block font-medium mb-1">
-                          About Me
-                        </label>
-                        <textarea
-                          name="bio"
-                          rows="4"
-                          value={formData.bio}
-                          onChange={handleChange}
-                          className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none resize-none transition ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600" 
-                              : "bg-white border-gray-300"
-                          }`}
-                          placeholder="Tell us about yourself..."
-                          maxLength="200"
-                        />
-                        <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
-                          Max 200 characters: {formData.bio.length}/200
-                        </p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4">
-                        <button
-                          type="button"
-                          onClick={handleReset}
-                          className={`px-4 py-2 rounded-md transition-colors ${
-                            darkMode 
-                              ? "bg-gray-700 hover:bg-gray-600" 
-                              : "bg-gray-200 hover:bg-gray-300"
-                          }`}
-                        >
-                          Discard Changes
-                        </button>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          type="submit"
-                          disabled={isSubmitting}
-                          className={`px-6 py-2 rounded-md text-white transition-colors ${
-                            isSubmitting
-                              ? "bg-blue-400 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700"
-                          }`}
-                        >
-                          {isSubmitting ? "Saving..." : "Save Changes"}
-                        </motion.button>
-                      </div>
-                    </form>
-                  </motion.div>
-                )}
-
-                {activeTab === "preferences" && (
-                  <motion.div
-                    key="preferences"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                      <FiBell />
-                      Notification Preferences
-                    </h2>
-
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      {/* Timezone */}
-                      <div>
-                        <label className="block font-medium mb-1 flex items-center gap-2">
-                          <FiClock size={16} />
-                          Timezone
-                        </label>
-                        <select
-                          name="timezone"
-                          value={formData.timezone}
-                          onChange={handleChange}
-                          className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600" 
-                              : "bg-white border-gray-300"
-                          }`}
-                        >
-                          {timezones.map(tz => (
-                            <option key={tz} value={tz}>{tz}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Notification Preferences */}
-                      <div>
-                        <h3 className="font-medium mb-3">Notification Settings</h3>
-                        <div className={`p-4 rounded-md ${
-                          darkMode ? "bg-gray-700" : "bg-gray-100"
-                        }`}>
-                          <div className="space-y-3">
-                            <label className="flex items-center justify-between cursor-pointer">
-                              <span className="font-medium">Email Notifications</span>
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.notifications.email}
-                                  onChange={() => handleNotificationChange("email")}
-                                  className="sr-only"
-                                />
-                                <div className={`block w-12 h-6 rounded-full transition-colors ${
-                                  formData.notifications.email
-                                    ? "bg-blue-600"
-                                    : darkMode
-                                      ? "bg-gray-600"
-                                      : "bg-gray-300"
-                                }`}></div>
-                                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${
-                                  formData.notifications.email ? "transform translate-x-6" : ""
-                                }`}></div>
-                              </div>
-                            </label>
-                            <label className="flex items-center justify-between cursor-pointer">
-                              <span className="font-medium">Push Notifications</span>
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.notifications.push}
-                                  onChange={() => handleNotificationChange("push")}
-                                  className="sr-only"
-                                />
-                                <div className={`block w-12 h-6 rounded-full transition-colors ${
-                                  formData.notifications.push
-                                    ? "bg-blue-600"
-                                    : darkMode
-                                      ? "bg-gray-600"
-                                      : "bg-gray-300"
-                                }`}></div>
-                                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${
-                                  formData.notifications.push ? "transform translate-x-6" : ""
-                                }`}></div>
-                              </div>
-                            </label>
-                            <label className="flex items-center justify-between cursor-pointer">
-                              <span className="font-medium">SMS Notifications</span>
-                              <div className="relative">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.notifications.sms}
-                                  onChange={() => handleNotificationChange("sms")}
-                                  className="sr-only"
-                                />
-                                <div className={`block w-12 h-6 rounded-full transition-colors ${
-                                  formData.notifications.sms
-                                    ? "bg-blue-600"
-                                    : darkMode
-                                      ? "bg-gray-600"
-                                      : "bg-gray-300"
-                                }`}></div>
-                                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${
-                                  formData.notifications.sms ? "transform translate-x-6" : ""
-                                }`}></div>
-                              </div>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex justify-end pt-4">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          type="submit"
-                          disabled={isSubmitting}
-                          className={`px-6 py-2 rounded-md text-white transition-colors ${
-                            isSubmitting
-                              ? "bg-blue-400 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700"
-                          }`}
-                        >
-                          {isSubmitting ? "Updating..." : "Update Preferences"}
-                        </motion.button>
-                      </div>
-                    </form>
-                  </motion.div>
-                )}
-
-                {activeTab === "social" && (
-                  <motion.div
-                    key="social"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                      <FiInstagram />
-                      Social Media Accounts
-                    </h2>
-
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      {/* Instagram */}
-                      <div>
-                        <label className="block font-medium mb-1 flex items-center gap-2">
-                          <FiInstagram size={16} />
-                          Instagram
-                        </label>
-                        <div className="flex">
-                          <span className={`inline-flex items-center px-3 rounded-l-md border border-r-0 ${
-                            darkMode ? "bg-gray-700 border-gray-600 text-gray-300" : "bg-gray-100 border-gray-300 text-gray-500"
-                          }`}>
-                            instagram.com/
-                          </span>
-                          <input
-                            type="text"
-                            value={formData.socialMedia.instagram}
-                            onChange={(e) => handleSocialMediaChange("instagram", e.target.value)}
-                            className={`flex-1 px-4 py-2 rounded-r-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                              darkMode 
-                                ? "bg-gray-700 border-gray-600" 
-                                : "bg-white border-gray-300"
-                            }`}
-                            placeholder="username"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Twitter */}
-                      <div>
-                        <label className="block font-medium mb-1 flex items-center gap-2">
-                          <FiTwitter size={16} />
-                          Twitter
-                        </label>
-                        <div className="flex">
-                          <span className={`inline-flex items-center px-3 rounded-l-md border border-r-0 ${
-                            darkMode ? "bg-gray-700 border-gray-600 text-gray-300" : "bg-gray-100 border-gray-300 text-gray-500"
-                          }`}>
-                            twitter.com/
-                          </span>
-                          <input
-                            type="text"
-                            value={formData.socialMedia.twitter}
-                            onChange={(e) => handleSocialMediaChange("twitter", e.target.value)}
-                            className={`flex-1 px-4 py-2 rounded-r-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                              darkMode 
-                                ? "bg-gray-700 border-gray-600" 
-                                : "bg-white border-gray-300"
-                            }`}
-                            placeholder="username"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Facebook */}
-                      <div>
-                        <label className="block font-medium mb-1 flex items-center gap-2">
-                          <FiFacebook size={16} />
-                          Facebook
-                        </label>
-                        <div className="flex">
-                          <span className={`inline-flex items-center px-3 rounded-l-md border border-r-0 ${
-                            darkMode ? "bg-gray-700 border-gray-600 text-gray-300" : "bg-gray-100 border-gray-300 text-gray-500"
-                          }`}>
-                            facebook.com/
-                          </span>
-                          <input
-                            type="text"
-                            value={formData.socialMedia.facebook}
-                            onChange={(e) => handleSocialMediaChange("facebook", e.target.value)}
-                            className={`flex-1 px-4 py-2 rounded-r-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                              darkMode 
-                                ? "bg-gray-700 border-gray-600" 
-                                : "bg-white border-gray-300"
-                            }`}
-                            placeholder="username"
-                          />
-                        </div>
-                      </div>
-
-                      {/* LinkedIn */}
-                      <div>
-                        <label className="block font-medium mb-1 flex items-center gap-2">
-                          <FiLinkedin size={16} />
-                          LinkedIn
-                        </label>
-                        <div className="flex">
-                          <span className={`inline-flex items-center px-3 rounded-l-md border border-r-0 ${
-                            darkMode ? "bg-gray-700 border-gray-600 text-gray-300" : "bg-gray-100 border-gray-300 text-gray-500"
-                          }`}>
-                            linkedin.com/in/
-                          </span>
-                          <input
-                            type="text"
-                            value={formData.socialMedia.linkedin}
-                            onChange={(e) => handleSocialMediaChange("linkedin", e.target.value)}
-                            className={`flex-1 px-4 py-2 rounded-r-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                              darkMode 
-                                ? "bg-gray-700 border-gray-600" 
-                                : "bg-white border-gray-300"
-                            }`}
-                            placeholder="username"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex justify-end pt-4">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          type="submit"
-                          disabled={isSubmitting}
-                          className={`px-6 py-2 rounded-md text-white transition-colors ${
-                            isSubmitting
-                              ? "bg-blue-400 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700"
-                          }`}
-                        >
-                          {isSubmitting ? "Updating..." : "Update Social Links"}
-                        </motion.button>
-                      </div>
-                    </form>
-                  </motion.div>
-                )}
-
-                {activeTab === "security" && (
-                  <motion.div
-                    key="security"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                      <FiLock />
-                      Security Settings
-                    </h2>
-
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      {/* Current Password */}
-                      <div>
-                        <label className="block font-medium mb-1">
-                          Current Password
-                        </label>
-                        <input
-                          type="password"
-                          className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600" 
-                              : "bg-white border-gray-300"
-                          }`}
-                          placeholder="Enter your current password"
-                        />
-                      </div>
-
-                      {/* New Password */}
-                      <div>
-                        <label className="block font-medium mb-1">
-                          New Password
-                        </label>
-                        <input
-                          type="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={handleChange}
-                          className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600" 
-                              : "bg-white border-gray-300"
-                          } ${errors.password ? "border-red-500" : ""}`}
-                          placeholder="Enter new password"
-                        />
-                        {errors.password && (
-                          <p className="mt-1 text-sm text-red-500">{errors.password}</p>
-                        )}
-                        <div className="mt-2">
-                          <div className={`h-1 rounded-full mb-1 ${
-                            formData.password.length > 0 
-                              ? formData.password.length < 6 
-                                ? "bg-red-500" 
-                                : formData.password.length < 10 
-                                  ? "bg-yellow-500" 
-                                  : "bg-green-500"
-                              : darkMode 
-                                ? "bg-gray-600" 
-                                : "bg-gray-200"
-                          }`}></div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {formData.password.length > 0 
-                              ? formData.password.length < 6 
-                                ? "Weak" 
-                                : formData.password.length < 10 
-                                  ? "Moderate" 
-                                  : "Strong"
-                              : "Password strength"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Confirm New Password */}
-                      <div>
-                        <label className="block font-medium mb-1">
-                          Confirm New Password
-                        </label>
-                        <input
-                          type="password"
-                          className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                            darkMode 
-                              ? "bg-gray-700 border-gray-600" 
-                              : "bg-white border-gray-300"
-                          }`}
-                          placeholder="Confirm your new password"
-                        />
-                      </div>
-
-                      {/* Two-Factor Authentication */}
-                      <div className="pt-4">
-                        <h3 className="font-medium mb-3">Two-Factor Authentication</h3>
-                        <div className={`p-4 rounded-md ${
-                          darkMode ? "bg-gray-700" : "bg-gray-100"
-                        }`}>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Status: <span className="text-yellow-600 dark:text-yellow-400">Disabled</span></p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                Add an extra layer of security to your account
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              className={`px-4 py-2 rounded-md text-sm ${
-                                darkMode 
-                                  ? "bg-gray-600 hover:bg-gray-500" 
-                                  : "bg-gray-200 hover:bg-gray-300"
-                              }`}
-                            >
-                              Enable
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex justify-end pt-4">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          type="submit"
-                          disabled={isSubmitting}
-                          className={`px-6 py-2 rounded-md text-white transition-colors ${
-                            isSubmitting
-                              ? "bg-blue-400 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700"
-                          }`}
-                        >
-                          {isSubmitting ? "Updating..." : "Update Security"}
-                        </motion.button>
-                      </div>
-                    </form>
-                  </motion.div>
-                )}
-
-                {activeTab === "help" && (
-                  <motion.div
-                    key="help"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                      <FiHelpCircle />
-                      Help Center
-                    </h2>
-
-                    <div className="space-y-6">
-                      <div className={`p-6 rounded-lg ${
-                        darkMode ? "bg-gray-700" : "bg-blue-50"
-                      }`}>
-                        <h3 className="font-semibold text-lg mb-3 text-blue-600 dark:text-blue-300">
-                          Need immediate help?
-                        </h3>
-                        <p className="mb-4">
-                          Our support team is available 24/7 to assist you with any questions or issues.
-                        </p>
-                        <button
-                          onClick={() => setShowContactModal(true)}
-                          className={`px-4 py-2 rounded-md ${
-                            darkMode 
-                              ? "bg-blue-600 hover:bg-blue-700" 
-                              : "bg-blue-100 hover:bg-blue-200 text-blue-800"
-                          }`}
-                        >
-                          Contact Support
-                        </button>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Frequently Asked Questions</h3>
-                        <div className="space-y-3">
-                          {[
-                            {
-                              q: "What is mental health and why is it important?",
-                              a: "Mental health encompasses our emotional, psychological, and social well-being. It affects how we think, feel, and act as we cope with life. Good mental health isn't just the absence of mental health problems. It's essential to your overall health and quality of life. Self-care can play a role in maintaining your mental health and help support your treatment and recovery if you have a mental illness.",
-                            },
-                            {
-                              q: "How can I improve my mental health on a daily basis?",
-                              a: "There are many ways to maintain good mental health: \n\n• Practice self-care through proper sleep, nutrition, and exercise \n• Develop coping skills for stress like meditation or journaling \n• Connect with others and maintain healthy relationships \n• Set realistic goals and break tasks into small steps \n• Take breaks when needed and make time for activities you enjoy \n• Seek professional help when you need it - it's a sign of strength",
-                            },
-                            {
-                              q: "What should I do when I feel overwhelmed or anxious?",
-                              a: "When feeling overwhelmed: \n\n1. Pause and take slow, deep breaths (try 4-7-8 breathing) \n2. Ground yourself by noticing 5 things you can see, 4 you can touch, etc. \n3. Break tasks into smaller, manageable pieces \n4. Prioritize what needs immediate attention \n5. Reach out to a friend, family member, or professional \n6. Remember that feelings are temporary and will pass \n7. Consider professional help if these feelings persist",
-                            },
-                            {
-                              q: "When should I consider seeing a mental health professional?",
-                              a: "Consider seeking professional help if you experience: \n\n• Persistent sadness, anxiety, or \"empty\" feelings lasting weeks \n• Extreme mood swings or excessive anger \n• Withdrawal from social activities and relationships \n• Significant changes in eating or sleeping patterns \n• Difficulty concentrating or making decisions \n• Thoughts of self-harm or suicide \n\nEarly intervention often leads to better outcomes. There's no need to wait until symptoms are severe",
-                            },
-                            {
-                              q: "How can I support a loved one with mental health challenges?",
-                              a: "Supporting someone with mental health issues: \n\n• Educate yourself about their condition \n• Listen without judgment and offer emotional support \n• Encourage professional help but don't force it \n• Be patient - recovery takes time \n• Take care of your own mental health too \n• Offer practical help with daily tasks if needed \n• Avoid dismissive phrases like \"snap out of it\" \n• Check in regularly but respect their boundaries",
+                        <Button
+                          component="label"
+                          variant="contained"
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            bottom: -10,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            borderRadius: "20px",
+                            textTransform: 'none',
+                            backgroundColor: "#297194",
+                            '&:hover': {
+                              backgroundColor: "#1D4E6B"
                             }
-                          ].map((faq, index) => (
-                            <div 
-                              key={index} 
-                              className={`p-4 rounded-md ${
-                                darkMode ? "bg-gray-700" : "bg-gray-100"
-                              }`}
-                            >
-                              <h4 className="font-medium">{faq.q}</h4>
-                              <p className="mt-2 text-gray-600 dark:text-gray-300 whitespace-pre-line">
-                                {faq.a}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contact Support Modal */}
-                    <AnimatePresence>
-                      {showContactModal && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-                          onClick={() => setShowContactModal(false)}
+                          }}
+                          startIcon={<FiUpload size={14} />}
                         >
-                          <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            className={`rounded-xl p-6 w-full max-w-md ${
-                              darkMode ? "bg-gray-800" : "bg-white"
-                            }`}
-                            onClick={e => e.stopPropagation()}
-                          >
-                            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                              <FiMail />
-                              Contact Support
-                            </h3>
-                            <form className="space-y-4">
-                              <div>
-                                <label className="block mb-1">Your Email</label>
-                                <input
-                                  type="email"
-                                  className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                                    darkMode 
-                                      ? "bg-gray-700 border-gray-600" 
-                                      : "bg-white border-gray-300"
-                                  }`}
-                                  placeholder="email@example.com"
-                                />
-                              </div>
-                              <div>
-                                <label className="block mb-1">Subject</label>
-                                <input
-                                  type="text"
-                                  className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                                    darkMode 
-                                      ? "bg-gray-700 border-gray-600" 
-                                      : "bg-white border-gray-300"
-                                  }`}
-                                  placeholder="What can we help with?"
-                                />
-                              </div>
-                              <div>
-                                <label className="block mb-1">Message</label>
-                                <textarea
-                                  rows="4"
-                                  className={`w-full px-4 py-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                                    darkMode 
-                                      ? "bg-gray-700 border-gray-600" 
-                                      : "bg-white border-gray-300"
-                                  }`}
-                                  placeholder="Describe your issue in detail..."
-                                ></textarea>
-                              </div>
-                              <div className="flex justify-end gap-3 pt-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setShowContactModal(false)}
-                                  className={`px-4 py-2 rounded-md ${
-                                    darkMode 
-                                      ? "bg-gray-700 hover:bg-gray-600" 
-                                      : "bg-gray-200 hover:bg-gray-300"
-                                  }`}
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  type="submit"
-                                  className={`px-4 py-2 rounded-md text-white ${
-                                    darkMode 
-                                      ? "bg-blue-600 hover:bg-blue-700" 
-                                      : "bg-blue-500 hover:bg-blue-600"
-                                  }`}
-                                >
-                                  Send Message
-                                </button>
-                              </div>
-                            </form>
-                          </motion.div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+                          Change
+                          <input
+                            type="file"
+                            onChange={handleFileChange}
+                            accept="image/*"
+                            hidden
+                          />
+                        </Button>
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ color: "#546E7A" }}>
+                          Recommended: Square image, at least 200x200 pixels
+                        </Typography>
+                        {errors.profile_image && (
+                          <Typography variant="body2" sx={{ color: "#D32F2F", mt: 1 }}>
+                            {errors.profile_image}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
 
-          {/* Footer */}
-          <div className={`p-4 text-center text-sm ${
-            darkMode ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-600"
-          }`}>
-            <p>© {new Date().getFullYear()} Mental Health App. All rights reserved.</p>
-          </div>
-        </motion.div>
-      </div>
-    </DarkModeContext.Provider>
+                    {/* Name */}
+                    <Box>
+                      <Typography variant="body1" fontWeight="500" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <FiUser size={16} /> Full Name
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        error={Boolean(errors.name)}
+                        helperText={errors.name}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: "8px",
+                            backgroundColor: "#FFFFFF"
+                          }
+                        }}
+                        required
+                      />
+                    </Box>
+
+                    {/* Email */}
+                    <Box>
+                      <Typography variant="body1" fontWeight="500" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <FiMail size={16} /> Email Address
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        error={Boolean(errors.email)}
+                        helperText={errors.email}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: "8px",
+                            backgroundColor: "#FFFFFF"
+                          }
+                        }}
+                        required
+                      />
+                    </Box>
+
+                    {/* Bio */}
+                    <Box>
+                      <Typography variant="body1" fontWeight="500" sx={{ mb: 1 }}>
+                        About Me
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleChange}
+                        placeholder="Tell us about yourself..."
+                        inputProps={{ maxLength: 200 }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: "8px",
+                            backgroundColor: "#FFFFFF"
+                          }
+                        }}
+                      />
+                      <Typography variant="body2" sx={{ color: "#546E7A", mt: 1 }}>
+                        Max 200 characters: {formData.bio.length}/200
+                      </Typography>
+                    </Box>
+
+                    {/* Actions */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 2 }}>
+                      <Button
+                        onClick={handleReset}
+                        variant="outlined"
+                        sx={{
+                          borderRadius: "8px",
+                          color: "#297194",
+                          borderColor: "#297194",
+                          '&:hover': {
+                            borderColor: "#1D4E6B"
+                          }
+                        }}
+                      >
+                        Discard Changes
+                      </Button>
+                      <motion.button
+                        type="submit"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        disabled={isSubmitting}
+                        style={{
+                          padding: '8px 24px',
+                          borderRadius: "8px",
+                          border: 'none',
+                          backgroundColor: isSubmitting ? "#81C784" : "#297194",
+                          color: "#FFFFFF",
+                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                          fontWeight: 500,
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        {isSubmitting ? "Saving..." : "Save Changes"}
+                      </motion.button>
+                    </Box>
+                  </Box>
+                </motion.div>
+              )}
+
+              {activeTab === "security" && (
+                <motion.div
+                  key="security"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Typography variant="h5" fontWeight="600" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <FiLock /> Security Settings
+                  </Typography>
+
+                  <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {/* Current Password */}
+                    <Box>
+                      <Typography variant="body1" fontWeight="500" sx={{ mb: 1 }}>
+                        Current Password
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        type="password"
+                        placeholder="Enter your current password"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: "8px",
+                            backgroundColor: "#FFFFFF"
+                          }
+                        }}
+                      />
+                    </Box>
+
+                    {/* New Password */}
+                    <Box>
+                      <Typography variant="body1" fontWeight="500" sx={{ mb: 1 }}>
+                        New Password
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        error={Boolean(errors.password)}
+                        helperText={errors.password}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: "8px",
+                            backgroundColor: "#FFFFFF"
+                          }
+                        }}
+                        placeholder="Enter new password"
+                      />
+                      <Box sx={{ mt: 2 }}>
+                        <Box sx={{ 
+                          height: 4,
+                          borderRadius: "2px",
+                          mb: 1,
+                          backgroundColor: formData.password.length > 0 
+                            ? formData.password.length < 6 
+                              ? "#D32F2F" 
+                              : formData.password.length < 10 
+                                ? "#FFA000" 
+                                : "#2E7D32"
+                            : "#E0E0E0"
+                        }}></Box>
+                        <Typography variant="body2" sx={{ color: "#546E7A" }}>
+                          {formData.password.length > 0 
+                            ? formData.password.length < 6 
+                              ? "Weak" 
+                              : formData.password.length < 10 
+                                ? "Moderate" 
+                                : "Strong"
+                            : "Password strength"}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Confirm New Password */}
+                    <Box>
+                      <Typography variant="body1" fontWeight="500" sx={{ mb: 1 }}>
+                        Confirm New Password
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        type="password"
+                        placeholder="Confirm your new password"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: "8px",
+                            backgroundColor: "#FFFFFF"
+                          }
+                        }}
+                      />
+                    </Box>
+
+                    {/* Actions */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2 }}>
+                      <motion.button
+                        type="submit"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        disabled={isSubmitting}
+                        style={{
+                          padding: '8px 24px',
+                          borderRadius: "8px",
+                          border: 'none',
+                          backgroundColor: isSubmitting ? "#81C784" : "#297194",
+                          color: "#FFFFFF",
+                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                          fontWeight: 500,
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        {isSubmitting ? "Updating..." : "Update Security"}
+                      </motion.button>
+                    </Box>
+                  </Box>
+                </motion.div>
+              )}
+
+              {activeTab === "help" && (
+                <motion.div
+                  key="help"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Typography variant="h5" fontWeight="600" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <FiHelpCircle /> Help Center
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <Box sx={{ 
+                      p: 3,
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(41, 113, 148, 0.1)",
+                      border: "1px solid rgba(41, 113, 148, 0.3)"
+                    }}>
+                      <Typography variant="h6" fontWeight="600" sx={{ mb: 2, color: "#297194" }}>
+                        Need immediate help?
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        Our support team is available 24/7 to assist you with any questions or issues.
+                      </Typography>
+                      <Button
+                        onClick={() => setShowContactModal(true)}
+                        variant="contained"
+                        sx={{
+                          backgroundColor: "#297194",
+                          '&:hover': {
+                            backgroundColor: "#1D4E6B"
+                          }
+                        }}
+                      >
+                        Contact Support
+                      </Button>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
+                        Frequently Asked Questions
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {[
+                          {
+                            q: "How do I update my profile information?",
+                            a: "You can update your profile information by navigating to the 'Profile' tab in Settings. Make your changes and click 'Save Changes'."
+                          },
+                          {
+                            q: "How can I change my password?",
+                            a: "Go to the 'Security' tab in Settings. Enter your current password, new password, and confirm the new password. Then click 'Update Security'."
+                          },
+                          {
+                            q: "What should I do if I forget my password?",
+                            a: "Click on 'Forgot Password' on the login page. Enter your email address and follow the instructions sent to your email to reset your password."
+                          },
+                          {
+                            q: "How can I delete my account?",
+                            a: "Currently, account deletion must be done by contacting our support team. Please use the 'Contact Support' button above."
+                          }
+                        ].map((faq, index) => (
+                          <Box 
+                            key={index} 
+                            sx={{ 
+                              p: 2,
+                              borderRadius: "8px",
+                              backgroundColor: "rgba(0, 0, 0, 0.03)",
+                              border: "1px solid rgba(0, 0, 0, 0.1)"
+                            }}
+                          >
+                            <Typography variant="subtitle1" fontWeight="500">{faq.q}</Typography>
+                            <Typography variant="body2" sx={{ mt: 1, color: "#546E7A" }}>
+                              {faq.a}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {/* Contact Support Modal */}
+                  <AnimatePresence>
+                    {showContactModal && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: 'rgba(0,0,0,0.5)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          zIndex: 1300,
+                          padding: 16
+                        }}
+                        onClick={() => setShowContactModal(false)}
+                      >
+                        <motion.div
+                          initial={{ scale: 0.9, y: 20 }}
+                          animate={{ scale: 1, y: 0 }}
+                          exit={{ scale: 0.9, y: 20 }}
+                          style={{
+                            backgroundColor: "#FFFFFF",
+                            borderRadius: "12px",
+                            padding: 24,
+                            width: '100%',
+                            maxWidth: 500
+                          }}
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <Typography variant="h6" fontWeight="600" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <FiMail /> Contact Support
+                          </Typography>
+                          <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <Box>
+                              <Typography variant="body1" sx={{ mb: 1 }}>Your Email</Typography>
+                              <TextField
+                                fullWidth
+                                type="email"
+                                placeholder="email@example.com"
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: "8px",
+                                    backgroundColor: "#FFFFFF"
+                                  }
+                                }}
+                              />
+                            </Box>
+                            <Box>
+                              <Typography variant="body1" sx={{ mb: 1 }}>Subject</Typography>
+                              <TextField
+                                fullWidth
+                                placeholder="What can we help with?"
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: "8px",
+                                    backgroundColor: "#FFFFFF"
+                                  }
+                                }}
+                              />
+                            </Box>
+                            <Box>
+                              <Typography variant="body1" sx={{ mb: 1 }}>Message</Typography>
+                              <TextField
+                                fullWidth
+                                multiline
+                                rows={4}
+                                placeholder="Describe your issue in detail..."
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: "8px",
+                                    backgroundColor: "#FFFFFF"
+                                  }
+                                }}
+                              />
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1 }}>
+                              <Button
+                                onClick={() => setShowContactModal(false)}
+                                variant="outlined"
+                                sx={{
+                                  color: "#297194",
+                                  borderColor: "#297194",
+                                  '&:hover': {
+                                    borderColor: "#1D4E6B"
+                                  }
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="submit"
+                                variant="contained"
+                                sx={{
+                                  backgroundColor: "#297194",
+                                  '&:hover': {
+                                    backgroundColor: "#1D4E6B"
+                                  }
+                                }}
+                              >
+                                Send Message
+                              </Button>
+                            </Box>
+                          </Box>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Box>
+        </Box>
+
+        {/* Footer */}
+        <Box sx={{ 
+          mt: 3,
+          p: 2,
+          textAlign: 'center',
+          borderRadius: "12px",
+          background: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(5px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: "0 8px 16px rgba(0,0,0,0.1)"
+        }}>
+          <Typography variant="body2" sx={{ color: "#546E7A" }}>
+            © {new Date().getFullYear()} MindGuard. All rights reserved.
+          </Typography>
+        </Box>
+      </motion.div>
+    </Box>
   );
 };
 
