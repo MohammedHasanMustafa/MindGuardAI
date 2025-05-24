@@ -11,12 +11,21 @@ import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
 const RiskAnalysis = () => {
-  const [alerts, setAlerts] = useState([]);
+  const [riskData, setRiskData] = useState({
+    userId: null,
+    count: 0,
+    riskLevels: []
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
-    riskLevels: ["High", "Moderate", "Low"],
+    riskLevels: ["High Risk", "Moderate Risk", "Low Risk"],
+    disorders: [
+      "ADHD", "BPD", "OCD", "PTSD", "Anxiety", 
+      "Autism", "Bipolar", "Depression", "Eating Disorders", 
+      "Health", "Mental Illness", "Schizophrenia", "Suicide Watch"
+    ],
     dateRange: [null, null],
     searchQuery: "",
   });
@@ -31,93 +40,175 @@ const RiskAnalysis = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    const fetchAlerts = async () => {
+    const fetchRisks = async () => {
       try {
-        const res = await axios.get("https://mindguardaibackend.onrender.com/api/chatbot/risk-alerts", {
+        const res = await axios.get("http://localhost:5000/api/chatbot/risk-levels", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setAlerts(res.data.alerts.map(alert => ({
-          ...alert,
-          riskScore: calculateRiskScore(alert.riskLevel),
+        
+        // Transform API data to match our frontend structure
+        const transformedRisks = res.data.riskLevels.map(risk => ({
+          ...risk,
+          id: risk.id.toString(),
+          riskScore: calculateRiskScore(risk.riskLevel),
+          text: `${risk.disorder} assessment`,
           comments: [],
-          acknowledged: false
-        })) || []);
+          acknowledged: false,
+          recommendation: getRecommendation(risk.riskLevel, risk.disorder),
+          timestamp: new Date(risk.timestamp).toISOString()
+        }));
+        
+        setRiskData({
+          userId: res.data.userId,
+          count: res.data.count,
+          riskLevels: transformedRisks
+        });
       } catch (err) {
-        console.error("Error fetching alerts:", err);
+        console.error("Error fetching risks:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAlerts();
+    fetchRisks();
   }, []);
 
   const calculateRiskScore = (riskLevel) => {
     switch(riskLevel) {
-      case "High": return Math.floor(Math.random() * 30) + 70; // 70-100
-      case "Moderate": return Math.floor(Math.random() * 30) + 40; // 40-69
-      case "Low": return Math.floor(Math.random() * 39) + 1; // 1-39
+      case "High Risk": return Math.floor(Math.random() * 30) + 70; // 70-100
+      case "Moderate Risk": return Math.floor(Math.random() * 30) + 40; // 40-69
+      case "Low Risk": return Math.floor(Math.random() * 39) + 1; // 1-39
       default: return 0;
     }
   };
 
-  const filteredAlerts = useMemo(() => {
-    return alerts.filter(alert => {
+  const getRecommendation = (riskLevel, disorder) => {
+    const recommendations = {
+      "High Risk": {
+        "ADHD": "Immediate consultation with a specialist recommended for ADHD management.",
+        "BPD": "Urgent psychiatric evaluation needed for Borderline Personality Disorder.",
+        "OCD": "Schedule intensive therapy sessions for OCD symptoms.",
+        "PTSD": "Immediate trauma-focused therapy recommended.",
+        "Anxiety": "Urgent intervention for anxiety disorder needed.",
+        "Autism": "Immediate consultation with a specialist recommended.",
+        "Bipolar": "Urgent psychiatric evaluation needed.",
+        "Depression": "Immediate intervention and possible medication review.",
+        "Eating Disorders": "Urgent nutritional and psychological intervention required.",
+        "Health": "Immediate medical consultation recommended.",
+        "Mental Illness": "Urgent psychiatric evaluation needed.",
+        "Schizophrenia": "Immediate psychiatric intervention required.",
+        "Suicide Watch": "Emergency intervention and continuous monitoring needed."
+      },
+      "Moderate Risk": {
+        "ADHD": "Behavioral therapy and possible medication evaluation recommended.",
+        "BPD": "Regular dialectical behavior therapy sessions suggested.",
+        "OCD": "Cognitive behavioral therapy recommended for OCD.",
+        "PTSD": "Trauma-focused therapy and regular monitoring suggested.",
+        "Anxiety": "Cognitive behavioral therapy and stress management recommended.",
+        "Autism": "Regular monitoring and behavioral therapy suggested.",
+        "Bipolar": "Regular check-ups and mood tracking recommended.",
+        "Depression": "Therapy and lifestyle changes advised.",
+        "Eating Disorders": "Nutritional counseling and therapy recommended.",
+        "Health": "Regular medical check-ups and monitoring suggested.",
+        "Mental Illness": "Regular psychiatric follow-ups recommended.",
+        "Schizophrenia": "Regular antipsychotic medication monitoring needed.",
+        "Suicide Watch": "Regular mental health check-ins and safety planning."
+      },
+      "Low Risk": {
+        "ADHD": "Routine screening and organizational strategies suggested.",
+        "BPD": "Emotional regulation techniques and self-monitoring recommended.",
+        "OCD": "Mindfulness exercises may be beneficial.",
+        "PTSD": "Stress management techniques and self-care recommended.",
+        "Anxiety": "Relaxation techniques and regular self-assessment suggested.",
+        "Autism": "Routine developmental screening suggested.",
+        "Bipolar": "Self-monitoring and annual check-up recommended.",
+        "Depression": "Regular self-assessment and support groups suggested.",
+        "Eating Disorders": "Regular nutritional self-assessment recommended.",
+        "Health": "Routine health check-ups and preventive care.",
+        "Mental Illness": "Annual mental health screening recommended.",
+        "Schizophrenia": "Regular self-monitoring for early symptoms.",
+        "Suicide Watch": "Regular self-assessment and support network maintenance."
+      }
+    };
+    
+    return recommendations[riskLevel]?.[disorder] || "No specific recommendation available.";
+  };
+
+  const filteredRisks = useMemo(() => {
+    return riskData.riskLevels.filter(risk => {
       // Risk Level Filter
-      if (!filters.riskLevels.includes(alert.riskLevel)) return false;
+      if (!filters.riskLevels.includes(risk.riskLevel)) return false;
+      
+      // Disorder Filter
+      if (!filters.disorders.includes(risk.disorder)) return false;
       
       // Date Range Filter
-      const alertDate = new Date(alert.createdAt);
-      if (filters.dateRange[0] && alertDate < filters.dateRange[0]) return false;
-      if (filters.dateRange[1] && alertDate > filters.dateRange[1]) return false;
+      const riskDate = new Date(risk.timestamp);
+      if (filters.dateRange[0] && riskDate < filters.dateRange[0]) return false;
+      if (filters.dateRange[1] && riskDate > filters.dateRange[1]) return false;
       
       // Search Query Filter
-      if (filters.searchQuery && 
-          !alert.recommendation.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
+      if (
+        filters.searchQuery &&
+        !risk.text.toLowerCase().includes(filters.searchQuery.toLowerCase())
+      ) {
         return false;
       }
       
       return true;
     });
-  }, [alerts, filters]);
+  }, [riskData.riskLevels, filters]);
 
-  const recentHighRisk = filteredAlerts.filter((a) => a.riskLevel === "High").slice(-3).reverse();
+  const recentHighRisk = filteredRisks.filter((r) => r.riskLevel === "High Risk").slice(-3).reverse();
 
-  const handleAddComment = (alertId) => {
+  const handleAddComment = (riskId) => {
     if (!newComment.trim()) return;
     
-    setAlerts(prev => prev.map(alert => 
-      alert.id === alertId 
-        ? { ...alert, comments: [...alert.comments, { 
-            text: newComment, 
-            timestamp: new Date().toISOString(),
-            user: "Current User"
-          }]}
-        : alert
-    ));
+    setRiskData(prev => ({
+      ...prev,
+      riskLevels: prev.riskLevels.map(risk => 
+        risk.id === riskId 
+          ? { ...risk, comments: [...risk.comments, { 
+              text: newComment, 
+              timestamp: new Date().toISOString(),
+              user: "Current User"
+            }]}
+          : risk
+      )
+    }));
     setNewComment("");
     setActiveAlertId(null);
   };
 
-  const handleAcknowledge = (alertId) => {
-    setAlerts(prev => prev.map(alert => 
-      alert.id === alertId ? { ...alert, acknowledged: true } : alert
-    ));
+  const handleAcknowledge = (riskId) => {
+    setRiskData(prev => ({
+      ...prev,
+      riskLevels: prev.riskLevels.map(risk => 
+        risk.id === riskId ? { ...risk, acknowledged: true } : risk
+      )
+    }));
   };
 
   // Chart Data
   const chartData = {
-    labels: filteredAlerts.map((a) => new Date(a.createdAt).toLocaleDateString()),
+    labels: filteredRisks.map((r) => new Date(r.timestamp).toLocaleDateString()),
     datasets: [
       {
         label: "Risk Level Trend",
-        data: filteredAlerts.map((a) => (a.riskLevel === "High" ? 3 : a.riskLevel === "Moderate" ? 2 : 1)),
+        data: filteredRisks.map((r) => {
+          switch(r.riskLevel) {
+            case "High Risk": return 3;
+            case "Moderate Risk": return 2;
+            case "Low Risk": return 1;
+            default: return 0;
+          }
+        }),
         borderColor: "#3b82f6",
         backgroundColor: "rgba(59, 130, 246, 0.1)",
         borderWidth: 2,
         pointBackgroundColor: (context) => {
           const value = context.dataset.data[context.dataIndex];
-          return value === 3 ? "#ef4444" : value === 2 ? "#f59e0b" : "#10b981";
+          return value === 3 ? "#ef4444" : value === 2 ? "#f59e0b" : value === 1 ? "#10b981" : "#888";
         },
         pointRadius: 5,
         pointHoverRadius: 7,
@@ -128,13 +219,13 @@ const RiskAnalysis = () => {
   };
 
   const analyticsData = {
-    labels: ["High", "Moderate", "Low"],
+    labels: ["High Risk", "Moderate Risk", "Low Risk"],
     datasets: [{
-      label: 'Alerts by Risk Level',
+      label: 'Risks by Level',
       data: [
-        filteredAlerts.filter(a => a.riskLevel === "High").length,
-        filteredAlerts.filter(a => a.riskLevel === "Moderate").length,
-        filteredAlerts.filter(a => a.riskLevel === "Low").length
+        filteredRisks.filter(r => r.riskLevel === "High Risk").length,
+        filteredRisks.filter(r => r.riskLevel === "Moderate Risk").length,
+        filteredRisks.filter(r => r.riskLevel === "Low Risk").length
       ],
       backgroundColor: [
         'rgba(239, 68, 68, 0.7)',
@@ -150,14 +241,43 @@ const RiskAnalysis = () => {
     }]
   };
 
+  const disorderDistributionData = {
+    labels: [...new Set(filteredRisks.map(r => r.disorder))],
+    datasets: [{
+      label: 'Assessments by Disorder',
+      data: [...new Set(filteredRisks.map(r => r.disorder))].map(disorder => 
+        filteredRisks.filter(r => r.disorder === disorder).length
+      ),
+      backgroundColor: [
+        'rgba(99, 102, 241, 0.7)',
+        'rgba(168, 85, 247, 0.7)',
+        'rgba(236, 72, 153, 0.7)',
+        'rgba(6, 182, 212, 0.7)'
+      ],
+      borderColor: [
+        'rgba(99, 102, 241, 1)',
+        'rgba(168, 85, 247, 1)',
+        'rgba(236, 72, 153, 1)',
+        'rgba(6, 182, 212, 1)'
+      ],
+      borderWidth: 1
+    }]
+  };
+
   const riskLabels = {
-    1: "Low",
-    2: "Moderate",
-    3: "High",
+    0: "No Data",
+    1: "Low Risk",
+    2: "Moderate Risk",
+    3: "High Risk",
   };
 
   const getRiskColor = (riskLevel) => {
-    return riskLevel === "High" ? "red" : riskLevel === "Moderate" ? "yellow" : "green";
+    switch(riskLevel) {
+      case "High Risk": return "red";
+      case "Moderate Risk": return "yellow";
+      case "Low Risk": return "green";
+      default: return "gray";
+    }
   };
 
   if (isLoading) {
@@ -196,7 +316,7 @@ const RiskAnalysis = () => {
               <FaSearch className="absolute left-3 top-3 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search alerts..."
+                placeholder="Search assessments..."
                 className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={filters.searchQuery}
                 onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
@@ -212,81 +332,112 @@ const RiskAnalysis = () => {
         </div>
 
         {/* Filter Panel */}
-        {/* Filter Panel */}
-<AnimatePresence>
-  {showFilters && (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-4 mb-6 overflow-hidden"
-    >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Risk Level Filter */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Risk Level</label>
-          <div className="space-y-2">
-            {["High", "Moderate", "Low"].map(level => (
-              <label key={level} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={filters.riskLevels.includes(level)}
-                  onChange={() => {
-                    const newLevels = filters.riskLevels.includes(level)
-                      ? filters.riskLevels.filter(l => l !== level)
-                      : [...filters.riskLevels, level];
-                    setFilters({...filters, riskLevels: newLevels});
-                  }}
-                  className="rounded text-blue-600"
-                />
-                <span>{level} Risk</span>
-              </label>
-            ))}
+        <AnimatePresence>
+    {showFilters && (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: 'auto' }}
+        exit={{ opacity: 0, height: 0 }}
+        className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-4 mb-6 overflow-hidden"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Risk Level Filter */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Risk Level</label>
+            <div className="space-y-2">
+              {["High Risk", "Moderate Risk", "Low Risk"].map(level => (
+                <label key={level} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={filters.riskLevels.includes(level)}
+                    onChange={() => {
+                      const newLevels = filters.riskLevels.includes(level)
+                        ? filters.riskLevels.filter(l => l !== level)
+                        : [...filters.riskLevels, level];
+                      setFilters({...filters, riskLevels: newLevels});
+                    }}
+                    className="rounded text-blue-600"
+                  />
+                  <span>{level}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          {/* Disorder Filter */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Disorder Type</label>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {[
+                "ADHD", "BPD", "OCD", "PTSD", "Anxiety", 
+                "Autism", "Bipolar", "Depression", "Eating Disorders", 
+                "Health", "Mental Illness", "Schizophrenia", "Suicide Watch"
+              ].map(disorder => (
+                <label key={disorder} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={filters.disorders.includes(disorder)}
+                    onChange={() => {
+                      const newDisorders = filters.disorders.includes(disorder)
+                        ? filters.disorders.filter(d => d !== disorder)
+                        : [...filters.disorders, disorder];
+                      setFilters({...filters, disorders: newDisorders});
+                    }}
+                    className="rounded text-blue-600"
+                  />
+                  <span>{disorder}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          {/* Date Range Picker */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Date Range</label>
+            <div className="flex flex-col space-y-2">
+              <input
+                type="date"
+                onChange={(e) => setFilters(prev => ({
+                  ...prev, 
+                  dateRange: [e.target.value ? new Date(e.target.value) : null, prev.dateRange[1]]
+                }))}
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Start Date"
+              />
+              <input
+                type="date"
+                onChange={(e) => setFilters(prev => ({
+                  ...prev, 
+                  dateRange: [prev.dateRange[0], e.target.value ? new Date(e.target.value) : null]
+                }))}
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="End Date"
+              />
+            </div>
+          </div>
+          
+          {/* Reset Button */}
+          <div className="flex items-end">
+            <button
+              onClick={() => setFilters({
+                riskLevels: ["High Risk", "Moderate Risk", "Low Risk"],
+                disorders: [
+                  "ADHD", "BPD", "OCD", "PTSD", "Anxiety", 
+                  "Autism", "Bipolar", "Depression", "Eating Disorders", 
+                  "Health", "Mental Illness", "Schizophrenia", "Suicide Watch"
+                ],
+                dateRange: [null, null],
+                searchQuery: ""
+              })}
+              className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors"
+            >
+              Reset Filters
+            </button>
           </div>
         </div>
-        
-        {/* Fixed Date Range Picker */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Date Range</label>
-                  <div className="flex flex-col space-y-2">
-                    <input
-                      type="date"
-                      onChange={(e) => setFilters(prev => ({
-                        ...prev, 
-                        dateRange: [e.target.value ? new Date(e.target.value) : null, prev.dateRange[1]]
-                      }))}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Start Date"
-                    />
-                    <input
-                      type="date"
-                      onChange={(e) => setFilters(prev => ({
-                        ...prev, 
-                        dateRange: [prev.dateRange[0], e.target.value ? new Date(e.target.value) : null]
-                      }))}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="End Date"
-                    />
-                  </div>
-                </div>
-        
-        {/* Reset Button */}
-        <div className="flex items-end">
-          <button
-            onClick={() => setFilters({
-              riskLevels: ["High", "Moderate", "Low"],
-              dateRange: [null, null],
-              searchQuery: ""
-            })}
-            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors"
-          >
-            Reset Filters
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+      </motion.div>
+    )}
+  </AnimatePresence>
 
         {/* Navigation Tabs */}
         <motion.div className="flex mb-6 md:mb-10 overflow-x-auto">
@@ -325,25 +476,25 @@ const RiskAnalysis = () => {
               <h3 className="text-xl font-semibold mb-4 text-blue-800">Risk Summary</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Total Alerts:</span>
-                  <span className="font-bold">{filteredAlerts.length}</span>
+                  <span className="text-gray-600">Total Assessments:</span>
+                  <span className="font-bold">{filteredRisks.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">High Risk:</span>
                   <span className="font-bold text-red-600">
-                    {filteredAlerts.filter(a => a.riskLevel === "High").length}
+                    {filteredRisks.filter(r => r.riskLevel === "High Risk").length}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Moderate Risk:</span>
                   <span className="font-bold text-yellow-600">
-                    {filteredAlerts.filter(a => a.riskLevel === "Moderate").length}
+                    {filteredRisks.filter(r => r.riskLevel === "Moderate Risk").length}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Low Risk:</span>
                   <span className="font-bold text-green-600">
-                    {filteredAlerts.filter(a => a.riskLevel === "Low").length}
+                    {filteredRisks.filter(r => r.riskLevel === "Low Risk").length}
                   </span>
                 </div>
                 
@@ -355,9 +506,9 @@ const RiskAnalysis = () => {
                       className="bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 h-4 rounded-full" 
                       style={{ 
                         width: `${Math.min(
-                          filteredAlerts.reduce((sum, a) => sum + a.riskScore, 0) / 
-                          Math.max(filteredAlerts.length, 1),
-        )}%` 
+                          filteredRisks.reduce((sum, r) => sum + r.riskScore, 0) / 
+                          Math.max(filteredRisks.length, 1),
+                        )}%` 
                       }}
                     ></div>
                   </div>
@@ -368,8 +519,8 @@ const RiskAnalysis = () => {
                   </div>
                   <div className="text-center mt-2">
                     <span className="font-bold">
-                      {filteredAlerts.length > 0 
-                        ? Math.round(filteredAlerts.reduce((sum, a) => sum + a.riskScore, 0) / filteredAlerts.length)
+                      {filteredRisks.length > 0 
+                        ? Math.round(filteredRisks.reduce((sum, r) => sum + r.riskScore, 0) / filteredRisks.length)
                         : 0}
                     </span> Current Average Risk Score
                   </div>
@@ -385,7 +536,7 @@ const RiskAnalysis = () => {
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold text-red-600 flex items-center gap-2">
                   <FaExclamationCircle className="text-2xl" />
-                  Recent High-Risk Alerts
+                  Recent High-Risk Assessments
                 </h3>
                 <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
                   Threshold: {userPreferences.alertThreshold}+
@@ -393,7 +544,7 @@ const RiskAnalysis = () => {
               </div>
               {recentHighRisk.length > 0 ? (
                 <ul className="space-y-3">
-                  {recentHighRisk.map((a, i) => (
+                  {recentHighRisk.map((r, i) => (
                     <motion.li
                       key={i}
                       className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm hover:shadow-md transition"
@@ -405,27 +556,33 @@ const RiskAnalysis = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="text-sm text-gray-500 mb-1">
-                            {new Date(a.createdAt).toLocaleString()}
+                            {new Date(r.timestamp).toLocaleString()}
                           </p>
-                          <p className="font-medium">{a.recommendation}</p>
+                          <p className="font-medium">{r.disorder} Assessment</p>
+                          <p className="text-sm text-gray-700">{r.text}</p>
                         </div>
                         <div className="text-right">
-                          <span className="font-bold text-red-600">{a.riskScore}</span>
+                          <span className="font-bold text-red-600">{r.riskScore}</span>
                           <span className="block text-xs text-gray-500">Risk Score</span>
                         </div>
+                      </div>
+                      
+                      <div className="mt-2">
+                        <p className="text-sm font-medium">Recommendation:</p>
+                        <p className="text-sm text-gray-700">{r.recommendation}</p>
                       </div>
                       
                       {/* Collaboration Features */}
                       <div className="mt-2 flex justify-between items-center">
                         <button 
-                          onClick={() => setActiveAlertId(activeAlertId === a.id ? null : a.id)}
+                          onClick={() => setActiveAlertId(activeAlertId === r.id ? null : r.id)}
                           className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                         >
-                          <FaComment /> {a.comments.length} Comments
+                          <FaComment /> {r.comments.length} Comments
                         </button>
-                        {!a.acknowledged && (
+                        {!r.acknowledged && (
                           <button 
-                            onClick={() => handleAcknowledge(a.id)}
+                            onClick={() => handleAcknowledge(r.id)}
                             className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200"
                           >
                             Acknowledge
@@ -434,11 +591,11 @@ const RiskAnalysis = () => {
                       </div>
                       
                       {/* Comment Section */}
-                      {activeAlertId === a.id && (
+                      {activeAlertId === r.id && (
                         <div className="mt-3">
                           <div className="max-h-40 overflow-y-auto mb-2 space-y-2">
-                            {a.comments.length > 0 ? (
-                              a.comments.map((comment, idx) => (
+                            {r.comments.length > 0 ? (
+                              r.comments.map((comment, idx) => (
                                 <div key={idx} className="bg-white p-2 rounded border text-sm">
                                   <p className="font-medium">{comment.user}</p>
                                   <p>{comment.text}</p>
@@ -460,7 +617,7 @@ const RiskAnalysis = () => {
                               className="flex-1 text-sm p-2 border rounded"
                             />
                             <button
-                              onClick={() => handleAddComment(a.id)}
+                              onClick={() => handleAddComment(r.id)}
                               className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
                             >
                               Post
@@ -475,7 +632,7 @@ const RiskAnalysis = () => {
                 <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
                   <p className="text-gray-600 flex items-center gap-2">
                     <FaCheckCircle className="text-green-500" />
-                    No recent high-risk alerts detected.
+                    No recent high-risk assessments detected.
                   </p>
                 </div>
               )}
@@ -508,7 +665,7 @@ const RiskAnalysis = () => {
                         callback: (value) => riskLabels[value] || "",
                         stepSize: 1,
                       },
-                      min: 1,
+                      min: 0,
                       max: 3,
                     },
                   },
@@ -517,7 +674,12 @@ const RiskAnalysis = () => {
                       callbacks: {
                         label: (context) => {
                           const value = context.raw;
-                          return `Risk Level: ${riskLabels[value]}`;
+                          const risk = filteredRisks[context.dataIndex];
+                          return [
+                            `Risk Level: ${riskLabels[value]}`,
+                            `Disorder: ${risk.disorder}`,
+                            `Score: ${risk.riskScore}`
+                          ];
                         },
                       },
                     },
@@ -554,11 +716,11 @@ const RiskAnalysis = () => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold text-indigo-700 flex items-center gap-2">
                 <FaHistory className="text-2xl" />
-                Alert History Timeline
+                Assessment History
               </h3>
               <div className="flex items-center gap-2">
                 <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                  Showing {filteredAlerts.length} alerts
+                  Showing {filteredRisks.length} of {riskData.count} assessments
                 </span>
                 <button className="text-blue-600 hover:text-blue-800">
                   <FaFileExport />
@@ -566,58 +728,64 @@ const RiskAnalysis = () => {
               </div>
             </div>
             <div className="space-y-4">
-              {filteredAlerts.length > 0 ? (
-                [...filteredAlerts].reverse().map((a, i) => (
+              {filteredRisks.length > 0 ? (
+                [...filteredRisks].reverse().map((r, i) => (
                   <motion.div
                     key={i}
-                    className={`p-4 rounded-xl shadow-sm hover:shadow-md transition border-l-4 border-${getRiskColor(a.riskLevel)}-500 bg-white`}
+                    className={`p-4 rounded-xl shadow-sm hover:shadow-md transition border-l-4 border-${getRiskColor(r.riskLevel)}-500 bg-white`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
                     whileHover={{ scale: 1.01 }}
                   >
                     <div className="flex items-start gap-3">
-                      {a.riskLevel === "High" && (
+                      {r.riskLevel === "High Risk" && (
                         <FaExclamationCircle className="text-red-500 text-xl mt-1 flex-shrink-0" />
                       )}
-                      {a.riskLevel === "Moderate" && (
+                      {r.riskLevel === "Moderate Risk" && (
                         <FaExclamationTriangle className="text-yellow-500 text-xl mt-1 flex-shrink-0" />
                       )}
-                      {a.riskLevel === "Low" && (
+                      {r.riskLevel === "Low Risk" && (
                         <FaCheckCircle className="text-green-500 text-xl mt-1 flex-shrink-0" />
                       )}
                       <div className="flex-1">
                         <div className="flex justify-between">
                           <p className="text-sm text-gray-500 mb-1">
-                            {new Date(a.createdAt).toLocaleString()}
+                            {new Date(r.timestamp).toLocaleString()}
                           </p>
-                          <span className={`font-bold text-${getRiskColor(a.riskLevel)}-600`}>
-                            {a.riskScore} pts
+                          <span className={`font-bold text-${getRiskColor(r.riskLevel)}-600`}>
+                            {r.riskScore} pts
                           </span>
                         </div>
                         <p className="font-medium">
-                          <span className={`font-semibold text-${getRiskColor(a.riskLevel)}-600`}>
-                            {a.riskLevel} Risk
+                          <span className={`font-semibold text-${getRiskColor(r.riskLevel)}-600`}>
+                            {r.riskLevel}
                           </span>{" "}
-                          – <span className="text-gray-700">{a.recommendation}</span>
+                          – <span className="text-gray-700">{r.disorder} Assessment</span>
                         </p>
+                        <p className="text-sm text-gray-700 mt-1">{r.text}</p>
+                        
+                        <div className="mt-2">
+                          <p className="text-sm font-medium">Recommendation:</p>
+                          <p className="text-sm text-gray-700">{r.recommendation}</p>
+                        </div>
                         
                         {/* Collaboration Features */}
                         <div className="mt-2 flex justify-between items-center">
                           <button 
-                            onClick={() => setActiveAlertId(activeAlertId === a.id ? null : a.id)}
+                            onClick={() => setActiveAlertId(activeAlertId === r.id ? null : r.id)}
                             className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                           >
-                            <FaComment /> {a.comments.length} Comments
+                            <FaComment /> {r.comments.length} Comments
                           </button>
                           <div className="flex items-center gap-2">
-                            {a.acknowledged ? (
+                            {r.acknowledged ? (
                               <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
                                 Acknowledged
                               </span>
                             ) : (
                               <button 
-                                onClick={() => handleAcknowledge(a.id)}
+                                onClick={() => handleAcknowledge(r.id)}
                                 className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200"
                               >
                                 Acknowledge
@@ -630,11 +798,11 @@ const RiskAnalysis = () => {
                         </div>
                         
                         {/* Comment Section */}
-                        {activeAlertId === a.id && (
+                        {activeAlertId === r.id && (
                           <div className="mt-3">
                             <div className="max-h-40 overflow-y-auto mb-2 space-y-2">
-                              {a.comments.length > 0 ? (
-                                a.comments.map((comment, idx) => (
+                              {r.comments.length > 0 ? (
+                                r.comments.map((comment, idx) => (
                                   <div key={idx} className="bg-gray-50 p-2 rounded border text-sm">
                                     <p className="font-medium">{comment.user}</p>
                                     <p>{comment.text}</p>
@@ -656,7 +824,7 @@ const RiskAnalysis = () => {
                                 className="flex-1 text-sm p-2 border rounded"
                               />
                               <button
-                                onClick={() => handleAddComment(a.id)}
+                                onClick={() => handleAddComment(r.id)}
                                 className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
                               >
                                 Post
@@ -670,7 +838,7 @@ const RiskAnalysis = () => {
                 ))
               ) : (
                 <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                  <p className="text-gray-600">No alerts match your filters.</p>
+                  <p className="text-gray-600">No assessments match your filters.</p>
                 </div>
               )}
             </div>
@@ -690,7 +858,7 @@ const RiskAnalysis = () => {
                 className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
                 whileHover={{ y: -5 }}
               >
-                <h3 className="text-xl font-semibold mb-4 text-blue-800">Alert Distribution</h3>
+                <h3 className="text-xl font-semibold mb-4 text-blue-800">Risk Level Distribution</h3>
                 <div className="h-64">
                   <Bar 
                     data={analyticsData}
@@ -711,26 +879,16 @@ const RiskAnalysis = () => {
                 className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
                 whileHover={{ y: -5 }}
               >
-                <h3 className="text-xl font-semibold mb-4 text-blue-800">Risk Score Distribution</h3>
+                <h3 className="text-xl font-semibold mb-4 text-blue-800">Disorder Distribution</h3>
                 <div className="h-64">
-                  <Line
-                    data={{
-                      labels: filteredAlerts.map((_, i) => `Alert ${i+1}`),
-                      datasets: [{
-                        label: 'Risk Score',
-                        data: filteredAlerts.map(a => a.riskScore),
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true
-                      }]
-                    }}
+                  <Bar 
+                    data={disorderDistributionData}
                     options={{
                       responsive: true,
                       maintainAspectRatio: false,
-                      scales: {
-                        y: {
-                          min: 0,
-                          max: 100
+                      plugins: {
+                        legend: {
+                          display: false
                         }
                       }
                     }}
@@ -743,15 +901,15 @@ const RiskAnalysis = () => {
               className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
               whileHover={{ y: -5 }}
             >
-              <h3 className="text-xl font-semibold mb-4 text-blue-800">Alert Frequency Over Time</h3>
+              <h3 className="text-xl font-semibold mb-4 text-blue-800">Assessment Frequency Over Time</h3>
               <div className="h-64">
                 <Line
                   data={{
-                    labels: Array.from(new Set(filteredAlerts.map(a => new Date(a.createdAt).toLocaleDateString()))),
+                    labels: Array.from(new Set(filteredRisks.map(r => new Date(r.timestamp).toLocaleDateString()))),
                     datasets: [{
-                      label: 'Alerts per Day',
-                      data: Object.values(filteredAlerts.reduce((acc, alert) => {
-                        const date = new Date(alert.createdAt).toLocaleDateString();
+                      label: 'Assessments per Day',
+                      data: Object.values(filteredRisks.reduce((acc, risk) => {
+                        const date = new Date(risk.timestamp).toLocaleDateString();
                         acc[date] = (acc[date] || 0) + 1;
                         return acc;
                       }, {})),
