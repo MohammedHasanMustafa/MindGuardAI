@@ -16,15 +16,17 @@ const ForgotPassword = () => {
     setError("");
     setMessage("");
 
-   try {
-  const res = await axios.post("https://mindguardaibackend.onrender.com/api/auth/forgot-password", { email });
+    try {
+      // Send a POST request to the backend endpoint
+      const res = await axios.post("http://localhost:5000/api/users/forgot-password", { email });
 
-  setMessage(res.data.message || "Password reset link has been sent to your email.");
-} catch (err) {
-  console.error(err); // Optional: log for debugging
-  setError(err.response?.data?.message || "Unable to process your request. Please try again.");
-}
- 
+      // Check the backend response for a success message
+      setMessage(res.data.message || "Password reset link has been sent to your email.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to process your request. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,12 +40,6 @@ const ForgotPassword = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
-         <img
-          src="/cross_icon.svg"
-          alt="Close"
-          className="w-6 h-6 absolute top-4 right-4 cursor-pointer z-50"
-          onClick={() => navigate("/")}
-        />
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Forgot Password</h2>
         <p className="text-sm text-gray-700 text-center mb-4">
           Enter your email address to receive a password reset link.
