@@ -8,124 +8,65 @@ import "react-datepicker/dist/react-datepicker.css";
 
 Chart.register(...registerables);
 
-const generateMockSocialData = () => {
-  const data = [];
-  const platforms = ['twitter', 'facebook', 'instagram'];
-  
-  for (let i = 90; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    
-    platforms.forEach(platform => {
-      // Generate random but somewhat realistic trends
-      const baseSentiment = 50 + Math.sin(i/7) * 20 + Math.random() * 10;
-      const baseDisorder = 30 + Math.cos(i/10) * 15 + Math.random() * 10;
-      
-      // Risk level based on disorder and sentiment
-      let risk;
-      if (baseDisorder > 50 || baseSentiment < 40) {
-        risk = 'High';
-      } else if (baseDisorder > 35 || baseSentiment < 50) {
-        risk = 'Moderate';
-      } else {
-        risk = 'Low';
-      }
-      
-      // Platform-specific variations
-      let platformModifier = 1;
-      if (platform === 'twitter') platformModifier = 0.9; // Twitter tends more negative
-      if (platform === 'instagram') platformModifier = 1.1; // Instagram tends more positive
-      
-      data.push({
-        date: date.toISOString(),
-        platform,
-        sentiment_confidence: Math.max(0, Math.min(100, 
-          baseSentiment * platformModifier + (Math.random() * 10 - 5)
-        )),
-        disorder_confidence: Math.max(0, Math.min(100, 
-          baseDisorder * (1/platformModifier) + (Math.random() * 10 - 5)
-        )),
-        risk,
-        notes: `Sample ${platform} data point on ${date.toLocaleDateString()}`
-      });
-    });
-  }
-  return data;
-};
-
 const TrendGraphs = () => {
   const [trendData, setTrendData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [activeTab, setActiveTab] = useState("sentiment");
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("7days");
+  const [timeRange, setTimeRange] = useState("1day");
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [chartType, setChartType] = useState("line");
-  const [platformFilter, setPlatformFilter] = useState("all");
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [highRiskDetected, setHighRiskDetected] = useState(false);
 
-  // Time range options
   const timeRanges = [
+    { value: "1day", label: "Last 24 Hours" },
+    { value: "3days", label: "Last 3 Days" },
     { value: "7days", label: "Last 7 Days" },
-    { value: "30days", label: "Last 30 Days" },
-    { value: "90days", label: "Last 90 Days" },
     { value: "custom", label: "Custom Range" },
   ];
 
-  // Platform options
-  const platformOptions = [
-    { value: "all", label: "All Platforms" },
-    { value: "twitter", label: "Twitter" },
-    { value: "facebook", label: "Facebook" },
-    { value: "instagram", label: "Instagram" },
-    { value: "mindguard", label: "Mindguard" }
-  ];
-
-  // Chart type options
   const chartTypes = [
     { value: "line", label: "Line Chart" },
     { value: "bar", label: "Bar Chart" },
   ];
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
     const fetchTrendData = async () => {
       try {
         setIsLoading(true);
-        
-        // Fetch real Mindguard data
-        const response = await axios.get(`https://mindguardaibackend.onrender.com/api/chatbot/trends`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`http://localhost:5000/api/chatbot/trend-data`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
         
-        // Generate mock social data
-        const mockSocialData = generateMockSocialData();
+        // Transform the API data to match our expected format
+        const transformedData = response.data.trendData.map(item => ({
+          id: item.id,
+          timestamp: item.timestamp,
+          sentiment: item.sentiment,
+          sentimentConfidence: item.sentimentConfidence,
+          disorder: item.disorder,
+          disorderConfidence: item.disorderConfidence,
+          riskLevel: item.riskLevel
+        }));
         
-        // Combine real Mindguard data with mock social data
-        const combinedData = [
-          ...response.data.trendData.map(item => ({ ...item, platform: 'mindguard' })),
-          ...mockSocialData
-        ];
+        setTrendData(transformedData);
+        filterData(transformedData, timeRange);
         
-        setTrendData(combinedData);
-        filterData(combinedData, timeRange, platformFilter);
-        
-        // Check for high risk in latest data (from both sources)
-        const latestMindguard = response.data.trendData[response.data.trendData.length - 1];
-        const latestSocial = mockSocialData[mockSocialData.length - 1];
-        
-        if (latestMindguard?.risk === "High" || latestSocial?.risk === "High") {
-          setHighRiskDetected(true);
+        // Check for high risk in latest data
+        if (transformedData.length > 0) {
+          const latest = transformedData[transformedData.length - 1];
+          if (latest.riskLevel === "High Risk") {
+            setHighRiskDetected(true);
+          }
         }
       } catch (error) {
         console.error("Error fetching trend data:", error);
-        // Fallback to mock data only if API fails
-        const mockSocialData = generateMockSocialData();
-        setTrendData(mockSocialData);
-        filterData(mockSocialData, timeRange, platformFilter);
       } finally {
         setIsLoading(false);
       }
@@ -137,33 +78,27 @@ const TrendGraphs = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const filterData = (data, range, platform) => {
+  const filterData = (data, range) => {
     let filtered = [...data];
     
-    // Filter by platform if not 'all'
-    if (platform !== "all") {
-      filtered = filtered.filter(item => item.platform?.toLowerCase() === platform);
-    }
-    
-    // Filter by time range
     const now = new Date();
     switch (range) {
+      case "1day":
+        const oneDayAgo = new Date(now.setDate(now.getDate() - 1));
+        filtered = filtered.filter(item => new Date(item.timestamp) >= oneDayAgo);
+        break;
+      case "3days":
+        const threeDaysAgo = new Date(now.setDate(now.getDate() - 3));
+        filtered = filtered.filter(item => new Date(item.timestamp) >= threeDaysAgo);
+        break;
       case "7days":
         const sevenDaysAgo = new Date(now.setDate(now.getDate() - 7));
-        filtered = filtered.filter(item => new Date(item.date) >= sevenDaysAgo);
-        break;
-      case "30days":
-        const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
-        filtered = filtered.filter(item => new Date(item.date) >= thirtyDaysAgo);
-        break;
-      case "90days":
-        const ninetyDaysAgo = new Date(now.setDate(now.getDate() - 90));
-        filtered = filtered.filter(item => new Date(item.date) >= ninetyDaysAgo);
+        filtered = filtered.filter(item => new Date(item.timestamp) >= sevenDaysAgo);
         break;
       case "custom":
         if (startDate && endDate) {
           filtered = filtered.filter(item => {
-            const itemDate = new Date(item.date);
+            const itemDate = new Date(item.timestamp);
             return itemDate >= startDate && itemDate <= endDate;
           });
         }
@@ -172,20 +107,16 @@ const TrendGraphs = () => {
         break;
     }
     
+    filtered.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     setFilteredData(filtered);
   };
 
   const handleTimeRangeChange = (range) => {
     setTimeRange(range);
-    filterData(trendData, range, platformFilter);
+    filterData(trendData, range);
   };
 
-  const handlePlatformChange = (platform) => {
-    setPlatformFilter(platform);
-    filterData(trendData, timeRange, platform);
-  };
-
-  const calculateMovingAverage = (data, windowSize = 7) => {
+  const calculateMovingAverage = (data, windowSize = 3) => {
     return data.map((_, index) => {
       const start = Math.max(0, index - windowSize + 1);
       const subset = data.slice(start, index + 1);
@@ -200,34 +131,54 @@ const TrendGraphs = () => {
     const first = filteredData[0];
     const last = filteredData[filteredData.length - 1];
     
-    const sentimentChange = last.sentiment_confidence - first.sentiment_confidence;
-    const riskChange = riskLevelMapping[last.risk] - riskLevelMapping[first.risk];
+    const sentimentChange = last.sentimentConfidence - first.sentimentConfidence;
+    const disorderChange = last.disorderConfidence - first.disorderConfidence;
     
     let summaryParts = [];
     
-    if (sentimentChange > 5) summaryParts.push(`Your sentiment improved by ${Math.abs(sentimentChange).toFixed(1)}%`);
-    else if (sentimentChange < -5) summaryParts.push(`Your sentiment declined by ${Math.abs(sentimentChange).toFixed(1)}%`);
+    if (sentimentChange > 5) summaryParts.push(`sentiment improved by ${Math.abs(sentimentChange).toFixed(1)}%`);
+    else if (sentimentChange < -5) summaryParts.push(`sentiment declined by ${Math.abs(sentimentChange).toFixed(1)}%`);
     
-    if (riskChange > 0) summaryParts.push(`risk level increased from ${first.risk} to ${last.risk}`);
-    else if (riskChange < 0) summaryParts.push(`risk level decreased from ${first.risk} to ${last.risk}`);
+    if (disorderChange > 5) summaryParts.push(`disorder confidence increased by ${Math.abs(disorderChange).toFixed(1)}%`);
+    else if (disorderChange < -5) summaryParts.push(`disorder confidence decreased by ${Math.abs(disorderChange).toFixed(1)}%`);
     
     if (summaryParts.length === 0) return "Your metrics have remained relatively stable during this period";
     
-    return `During this period, ${summaryParts.join(" and ")}.`;
+    return `During this period, your ${summaryParts.join(" and ")}.`;
   };
 
-  const riskLevelMapping = { Low: 20, Moderate: 50, High: 80 };
-  const riskThresholds = {
-    y: [
-      { value: 0, color: "rgba(46, 204, 113, 0.1)" },    // Green for low risk
-      { value: 50, color: "rgba(241, 196, 15, 0.1)" },  // Yellow for moderate risk
-      { value: 80, color: "rgba(231, 76, 60, 0.1)" },   // Red for high risk
-    ]
+  const riskLevelMapping = { 
+    "No Risk": 0, 
+    "Low Risk": 30, 
+    "Moderate Risk": 60, 
+    "High Risk": 90 
   };
 
-  const labels = filteredData.map(item =>
-    new Date(item.date).toLocaleDateString("en-US", { day: "numeric", month: "short" })
-  );
+  const generateChartLabels = () => {
+    if (!filteredData.length) return [];
+    
+    if (timeRange === "1day") {
+      return filteredData.map(item =>
+        new Date(item.timestamp).toLocaleTimeString("en-US", { 
+          hour: "2-digit", 
+          minute: "2-digit",
+          hour12: true 
+        })
+      );
+    } else {
+      return filteredData.map(item =>
+        new Date(item.timestamp).toLocaleDateString("en-US", { 
+          month: "short", 
+          day: "numeric", 
+          hour: "2-digit", 
+          minute: "2-digit",
+          hour12: true
+        })
+      );
+    }
+  };
+
+  const labels = generateChartLabels();
 
   const chartOptions = {
     responsive: true,
@@ -256,10 +207,30 @@ const TrendGraphs = () => {
         cornerRadius: 12,
         displayColors: true,
         mode: 'index',
-        intersect: false
-      },
-      annotation: {
-        annotations: riskThresholds
+        intersect: false,
+        callbacks: {
+          label: function(context) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              label += context.parsed.y.toFixed(1) + '%';
+            }
+            return label;
+          },
+          afterLabel: function(context) {
+            const dataItem = filteredData[context.dataIndex];
+            if (activeTab === "sentiment") {
+              return `Sentiment: ${dataItem.sentiment}`;
+            } else if (activeTab === "disorder") {
+              return `Disorder: ${dataItem.disorder}`;
+            } else if (activeTab === "risk") {
+              return `Risk: ${dataItem.riskLevel}`;
+            }
+            return '';
+          }
+        }
       }
     },
     scales: {
@@ -270,6 +241,9 @@ const TrendGraphs = () => {
           stepSize: 20,
           font: {
             size: 12
+          },
+          callback: function(value) {
+            return value + '%';
           }
         },
         grid: {
@@ -284,7 +258,6 @@ const TrendGraphs = () => {
           font: {
             size: 12
           },
-          // For bar charts, we might need to adjust the max rotation
           maxRotation: 45,
           minRotation: 45
         }
@@ -310,7 +283,7 @@ const TrendGraphs = () => {
   };
 
   // Sentiment data with moving average
-  const sentimentValues = filteredData.map(item => item.sentiment_confidence);
+  const sentimentValues = filteredData.map(item => item.sentimentConfidence);
   const sentimentData = {
     labels,
     datasets: [
@@ -323,7 +296,7 @@ const TrendGraphs = () => {
         pointBorderColor: "rgba(46, 204, 113, 1)",
       },
       {
-        label: "7-Day Average",
+        label: "3-Day Average",
         data: calculateMovingAverage(sentimentValues),
         borderColor: "rgba(41, 128, 185, 0.8)",
         backgroundColor: "transparent",
@@ -336,7 +309,7 @@ const TrendGraphs = () => {
   };
 
   // Disorder data with moving average
-  const disorderValues = filteredData.map(item => item.disorder_confidence);
+  const disorderValues = filteredData.map(item => item.disorderConfidence);
   const disorderData = {
     labels,
     datasets: [
@@ -349,7 +322,7 @@ const TrendGraphs = () => {
         pointBorderColor: "rgba(241, 196, 15, 1)",
       },
       {
-        label: "7-Day Average",
+        label: "3-Day Average",
         data: calculateMovingAverage(disorderValues),
         borderColor: "rgba(211, 84, 0, 0.8)",
         backgroundColor: "transparent",
@@ -362,7 +335,7 @@ const TrendGraphs = () => {
   };
 
   // Risk data with moving average
-  const riskValues = filteredData.map(item => riskLevelMapping[item.risk] || 0);
+  const riskValues = filteredData.map(item => riskLevelMapping[item.riskLevel] || 0);
   const riskData = {
     labels,
     datasets: [
@@ -375,7 +348,7 @@ const TrendGraphs = () => {
         pointBorderColor: "rgba(231, 76, 60, 1)",
       },
       {
-        label: "7-Day Average",
+        label: "3-Day Average",
         data: calculateMovingAverage(riskValues),
         borderColor: "rgba(192, 57, 43, 0.8)",
         backgroundColor: "transparent",
@@ -394,15 +367,10 @@ const TrendGraphs = () => {
       risk: riskData
     }[activeTab];
     
-    const chartProps = {
-      data,
-      options: chartOptions
-    };
-    
     return chartType === "bar" ? (
-      <Bar {...chartProps} />
+      <Bar data={data} options={chartOptions} />
     ) : (
-      <Line {...chartProps} />
+      <Line data={data} options={chartOptions} />
     );
   };
 
@@ -413,8 +381,10 @@ const TrendGraphs = () => {
     const prev = filteredData.length > 1 ? filteredData[filteredData.length - 2] : null;
     
     let sentimentChange = null;
+    let disorderChange = null;
     if (prev) {
-      sentimentChange = latest.sentiment_confidence - prev.sentiment_confidence;
+      sentimentChange = latest.sentimentConfidence - prev.sentimentConfidence;
+      disorderChange = latest.disorderConfidence - prev.disorderConfidence;
     }
     
     return (
@@ -423,16 +393,32 @@ const TrendGraphs = () => {
         <p className="mb-1">
           <span className="font-medium">Current Risk Level:</span> 
           <span className={`ml-2 px-2 py-1 rounded text-white ${
-            latest.risk === 'High' ? 'bg-red-500' : 
-            latest.risk === 'Moderate' ? 'bg-yellow-500' : 'bg-green-500'
+            latest.riskLevel === 'High Risk' ? 'bg-red-500' : 
+            latest.riskLevel === 'Moderate Risk' ? 'bg-yellow-500' : 
+            latest.riskLevel === 'Low Risk' ? 'bg-green-500' : 'bg-gray-500'
           }`}>
-            {latest.risk}
-            {latest.risk === 'High' && (
+            {latest.riskLevel}
+            {latest.riskLevel === 'High Risk' && (
               <span className="ml-2 inline-flex relative">
                 <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
             )}
+          </span>
+        </p>
+        <p className="mb-1">
+          <span className="font-medium">Current Sentiment:</span> 
+          <span className={`ml-2 ${
+            latest.sentiment === 'Positive' ? 'text-green-600' : 
+            latest.sentiment === 'Negative' ? 'text-red-600' : 'text-gray-600'
+          }`}>
+            {latest.sentiment} ({latest.sentimentConfidence.toFixed(1)}%)
+          </span>
+        </p>
+        <p className="mb-1">
+          <span className="font-medium">Detected Disorder:</span> 
+          <span className="ml-2 font-medium">
+            {latest.disorder} ({latest.disorderConfidence.toFixed(1)}%)
           </span>
         </p>
         {sentimentChange !== null && (
@@ -443,8 +429,16 @@ const TrendGraphs = () => {
             </span>
           </p>
         )}
+        {disorderChange !== null && (
+          <p className="mb-1">
+            <span className="font-medium">Disorder Confidence Change:</span> 
+            <span className={`ml-2 ${disorderChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+              {disorderChange >= 0 ? '↑' : '↓'} {Math.abs(disorderChange).toFixed(1)}%
+            </span>
+          </p>
+        )}
         <p className="text-sm text-gray-600 mt-2">
-          Last updated: {new Date(latest.date).toLocaleString()}
+          Last updated: {new Date(latest.timestamp).toLocaleString()}
         </p>
         <p className="mt-2 text-sm font-medium">
           Summary: {generateSummary()}
@@ -468,7 +462,7 @@ const TrendGraphs = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-white drop-shadow-md">
-            Your Mental Health Trends
+            Mindguard Mental Health Trends
           </h2>
           {highRiskDetected && (
             <button 
@@ -521,25 +515,27 @@ const TrendGraphs = () => {
                   selected={startDate}
                   onChange={(date) => {
                     setStartDate(date);
-                    filterData(trendData, "custom", platformFilter);
+                    filterData(trendData, "custom");
                   }}
                   selectsStart
                   startDate={startDate}
                   endDate={endDate}
                   placeholderText="Start Date"
                   className="border rounded px-2 py-1"
+                  maxDate={new Date()}
                 />
                 <span>to</span>
                 <DatePicker
                   selected={endDate}
                   onChange={(date) => {
                     setEndDate(date);
-                    filterData(trendData, "custom", platformFilter);
+                    filterData(trendData, "custom");
                   }}
                   selectsEnd
                   startDate={startDate}
                   endDate={endDate}
                   minDate={startDate}
+                  maxDate={new Date()}
                   placeholderText="End Date"
                   className="border rounded px-2 py-1"
                 />
@@ -547,18 +543,6 @@ const TrendGraphs = () => {
             )}
 
             <div className="flex space-x-2">
-              <select
-                value={platformFilter}
-                onChange={(e) => handlePlatformChange(e.target.value)}
-                className="border rounded px-2 py-1 bg-white"
-              >
-                {platformOptions.map((platform) => (
-                  <option key={platform.value} value={platform.value}>
-                    {platform.label}
-                  </option>
-                ))}
-              </select>
-
               <select
                 value={chartType}
                 onChange={(e) => setChartType(e.target.value)}
@@ -618,7 +602,13 @@ const TrendGraphs = () => {
                   </button>
                 </div>
                 <div className="p-5 h-96">
-                  {renderChart()}
+                  {filteredData.length > 0 ? (
+                    renderChart()
+                  ) : (
+                    <div className="flex justify-center items-center h-full text-gray-500">
+                      No data available for the selected time range
+                    </div>
+                  )}
                 </div>
               </div>
             </>
@@ -626,15 +616,14 @@ const TrendGraphs = () => {
         </div>
       </div>
       
-      {/* Tooltips */}
       <ReactTooltip id="sentiment-tooltip" place="top" effect="solid">
-        Measures positivity/negativity in your conversations
+        Measures positivity/negativity in your conversations (0-100%)
       </ReactTooltip>
       <ReactTooltip id="disorder-tooltip" place="top" effect="solid">
-        Indicates potential mental health disorder patterns
+        Confidence level for detected mental health patterns (0-100%)
       </ReactTooltip>
       <ReactTooltip id="risk-tooltip" place="top" effect="solid">
-        Shows your overall mental health risk assessment
+        Overall mental health risk assessment based on analysis
       </ReactTooltip>
     </div>
   );
