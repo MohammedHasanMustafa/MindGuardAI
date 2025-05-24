@@ -17,7 +17,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
 const SECRET = process.env.SECRET || 'mind-guard-special';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://mind-guard-ai.vercel.app';
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 const EMAIL_FROM = process.env.EMAIL_FROM;
